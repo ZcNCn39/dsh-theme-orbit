@@ -28,6 +28,13 @@ that image and is the artwork used at runtime. Generation and edit prompts
 are included beside the images. These are decorative generated illustrations,
 not photographs of real astronauts.
 
+The light-mode artwork `assets/solar-disk-v1.png` and
+`assets/floating-burning-skeleton-v1.png` was generated with the same built-in
+image generation tool. The skeleton uses the astronaut v2 as its pose reference.
+The solar disk is generated decorative artwork, not NASA data or a solar
+observation. Exact prompts are included beside these assets. The generated
+alpha is preserved in the packed runtime images.
+
 To the extent the project author holds rights in this generated artwork,
 it is made available under the project's MIT license. No third-party logos
 or endorsement are intended.

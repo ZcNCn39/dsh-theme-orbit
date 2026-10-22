@@ -18,3 +18,13 @@ floating-astronaut-v2.png: edited with the built-in image_gen tool on 2026-10-22
 from floating-astronauts-v1.png. Only the large astronaut is retained, enlarged
 to fill the composition, with both hands raised above the shoulders.
 The runtime now uses v2. Exact edit prompt: floating-astronaut-v2.prompt.md.
+
+solar-disk-v1.png: generated with the built-in image_gen tool on 2026-10-22.
+Detailed solar disk with a transparent corona, used only in light mode.
+This is decorative generated artwork, not NASA imagery or a solar observation.
+Exact prompt: solar-disk-v1.prompt.md.
+
+floating-burning-skeleton-v1.png: edited with the built-in image_gen tool on
+2026-10-22 from floating-astronaut-v2.png, preserving the reference pose.
+Transparent flames and the full reclining skeleton are used only in light mode.
+Exact edit prompt: floating-burning-skeleton-v1.prompt.md.

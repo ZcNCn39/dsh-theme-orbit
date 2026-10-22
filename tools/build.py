@@ -100,6 +100,15 @@ astronauts = Image.open(ROOT / 'assets/floating-astronaut-v2.png').convert('RGBA
 astronauts = astronauts.resize((640, 427), Image.Resampling.LANCZOS)
 packed = zlib.compress(astronauts.tobytes(), 9)
 client = client.replace('__ORBIT_ASTRONAUT_PIXELS__', base64.b64encode(packed).decode('ascii'))
+# New light-mode artwork retains the generated alpha; export to the same
+# bundled pixel format to avoid network requests and CSP image exceptions.
+for marker, filename, dimensions in [
+    ('__ORBIT_SKELETON_PIXELS__', 'floating-burning-skeleton-v1.png', (640, 427)),
+    ('__ORBIT_SUN_PIXELS__', 'solar-disk-v1.png', (512, 512)),
+]:
+    image = Image.open(ROOT / 'assets' / filename).convert('RGBA')
+    image = image.resize(dimensions, Image.Resampling.LANCZOS)
+    client = client.replace(marker, base64.b64encode(zlib.compress(image.tobytes(), 9)).decode('ascii'))
 (ROOT / 'lib/client.js').write_text(client, encoding='utf-8')
 preview.save(ROOT / 'assets/moon-rendered.png')
 print(f'Built {ROOT / "lib/client.js"}: {len(client):,} bytes')

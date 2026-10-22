@@ -1,20 +1,24 @@
 # Orbit · 轨道
 
-给 **DeepSeek Harness（DSH）** 的开源太空主题：真实月面、漂浮宇航员、随机流星，以及只在 DSH 内生效的火箭鼠标指针。
+给 **DeepSeek Harness（DSH）** 的开源太空主题：深色月球与漂浮宇航员、浅色太阳与燃烧骷髅、随机流星，以及只在 DSH 内生效的火箭鼠标指针。
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 当前版本：[v0.3.0](https://github.com/ZcNCn39/dsh-theme-orbit/releases/tag/v0.3.0) · [更新记录](CHANGELOG.md)
 
+开发分支新增浅色太阳主题，安装当前 `main` 可体验；已发布版本的内容见对应 release。
+
 ![Orbit 深色主题预览](docs/preview-dark.png)
 
 > 预览使用独立演示布局展示真实主题效果，不是 DSH 官方界面的截图，不包含私人会话。
 
+![Orbit 浅色太阳与燃烧骷髅主题](docs/preview-light.png)
+
 ## 有什么效果
 
 - **星空**：按窗口尺寸生成、不重复平铺的星点，文字阅读区域降低亮度。
-- **月球**：使用 NASA LRO / LROC / LOLA 数据制作月海与环形山细节，位于内容下方。
-- **宇航员**：左下角单个大宇航员，双手高于肩膀，后仰展开四肢，并轻微漂浮。
+- **深色月球与宇航员**：使用 NASA LRO / LROC / LOLA 数据制作月面；左下角宇航员双手高于肩膀，后仰展开四肢，并轻微漂浮。
+- **浅色太阳与燃烧骷髅**：右上角大太阳带表面纹理、暗斑和日冕；左下角燃烧骷髅沿用宇航员姿势。暖色星云、加强的星点和更透明的界面背景让装饰更明显，正文保持深色字与清晰的输入面板。新素材为透明背景的 AI 装饰图。
 - **流星**：15 个独立计时器，各自随机等待 **1–10 秒**，划过后重新随机计时；同屏活跃流星始终在 **0–15** 颗之间。
 - **鼠标光晕**：柔和的蓝白光随鼠标移动，离开页面后淡出。
 - **主题指针**：普通区域显示火箭，文字和输入区域显示蓝白 I 形指针；调整聊天宽度或面板大小时，显示对应方向的双向飞船与轨道环指针，支持水平、垂直及两个对角方向。缩放操作不会触发喷焰。
@@ -105,7 +109,7 @@ python tools/build.py
 node --check lib/client.js
 ```
 
-构建会把月面和宇航员像素、光标 SVG 一起打包进客户端文件。运行时不需要访问图片服务器。
+构建会把月面、太阳、宇航员和骷髅像素、光标 SVG 一起打包进客户端文件。图片只解码一次，明暗切换直接切换背景图层；运行时不需要访问图片服务器。
 
 常用调整位置：
 
@@ -117,6 +121,7 @@ node --check lib/client.js
 | 流星等待与数量 | `scheduleMeteor()`、`initMeteors()` |
 | 指针 | `assets/rocket-cursor.svg`、`assets/text-cursor.svg` |
 | 月球渲染 | `tools/build.py` |
+| 浅色太阳与燃烧骷髅 | `assets/solar-disk-v1.png`、`assets/floating-burning-skeleton-v1.png` |
 | 音效合成与默认音量 | `tools/soundscape.js` |
 
 查看可交互的独立演示页面：
@@ -136,6 +141,7 @@ node tools/test-browser.mjs
 node tools/test-turn-navigation.mjs
 node tools/test-resize-cursors.mjs
 node tools/test-soundscape.mjs
+node tools/test-solar-theme.mjs
 node tools/check-package.mjs
 ```
 
@@ -156,6 +162,6 @@ cordis.patch.yml     DSH bundle 注册入口
 
 ## 许可证与素材
 
-项目原创代码与光标采用 [MIT License](LICENSE)。月球数据来自 **NASA's Scientific Visualization Studio**，保留独立的来源说明与使用条款。宇航员是 AI 生成的装饰素材，生成提示词随仓库提供。完整说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [assets/CREDITS.md](assets/CREDITS.md)。
+项目原创代码与光标采用 [MIT License](LICENSE)。月球数据来自 **NASA's Scientific Visualization Studio**，保留独立的来源说明与使用条款。宇航员、太阳和燃烧骷髅是 AI 生成的装饰素材，生成提示词随仓库提供。完整说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [assets/CREDITS.md](assets/CREDITS.md)。
 
 这是独立社区主题，与 DeepSeek、NASA 均无隶属或背书关系。
