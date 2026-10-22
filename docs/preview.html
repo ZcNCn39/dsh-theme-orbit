@@ -32,10 +32,12 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
     var LAYER_ID = SOURCE + "-layer";
     var MOON_ID = SOURCE + "-moon";
     var SUN_ID = SOURCE + "-sun";
+    var SUN_DUST_ID = SOURCE + "-sun-particles";
     var STARS_ID = SOURCE + "-stars";
     var GLOW_ID = SOURCE + "-cursor-glow";
     var ASTRONAUT_ID = SOURCE + "-astronauts";
     var SKELETON_ID = SOURCE + "-skeleton";
+    var EMBERS_ID = SOURCE + "-skeleton-embers";
     var METEOR_ID = SOURCE + "-meteors";
     var SPARKS_ID = SOURCE + "-sparks";
     var SOUND_ID = SOURCE + "-sound";
@@ -228,6 +230,82 @@ function createOrbitSoundscape() {
 }
 
 
+    // Bounded, reusable pools. Only transform/opacity animate on the compositor;
+// there is no JS animation loop, per-pointer work, or recurring DOM allocation.
+function createOrbitSolarParticles(solarRoot, emberRoot) {
+  var disposed = false;
+  var motion = typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  var corona = [], embers = [];
+  function particle(root, kind, x, y, dx, dy, duration, phase, streak) {
+    var node = document.createElement("span");
+    node.setAttribute("data-solar-particle", kind);
+    if (streak) node.setAttribute("data-streak", "true");
+    node.style.left = x + "%"; node.style.top = y + "%";
+    root.appendChild(node);
+    var rotation = kind === "corona" ? Math.atan2(dy, dx) * 180 / Math.PI - 90 : -20 + Math.random() * 40;
+    return {
+      node:node, animation:null,
+      frames:[
+        { transform:"translate3d(0,0,0) rotate(" + rotation + "deg) scale(.4)", opacity:0, offset:0 },
+        { opacity:kind === "corona" ? 0.95 : 1, offset:0.16 },
+        { transform:"translate3d(" + dx * 0.55 + "px," + dy * 0.55 + "px,0) rotate(" + (rotation + 12) + "deg) scale(1)", opacity:0.7, offset:0.58 },
+        { transform:"translate3d(" + dx + "px," + dy + "px,0) rotate(" + (rotation + 28) + "deg) scale(.15)", opacity:0, offset:1 }
+      ],
+      timing:{ duration:duration, delay:-phase * duration, iterations:Infinity, easing:"linear" }
+    };
+  }
+  function buildCorona() {
+    if (corona.length) return;
+    for (var i = 0; i < 16; i++) {
+      var angle = i / 16 * Math.PI * 2 + (Math.random() - 0.5) * 0.22;
+      var reach = 26 + Math.random() * 38;
+      corona.push(particle(solarRoot, "corona", 50 + Math.cos(angle) * 42, 50 + Math.sin(angle) * 42,
+        Math.cos(angle) * reach, Math.sin(angle) * reach, 2600 + Math.random() * 2000, Math.random(), i % 4 === 0));
+    }
+  }
+  function buildEmbers() {
+    if (embers.length) return;
+    // Match the skull, raised hands, ribcage and feet of the pose reference.
+    var origins = [[23,20],[8,14],[59,12],[37,43],[52,60],[73,83],[92,72]];
+    for (var i = 0; i < 18; i++) {
+      var origin = origins[i % origins.length];
+      embers.push(particle(emberRoot, "ember", origin[0] + (Math.random() - 0.5) * 7,
+        origin[1] + (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 40,
+        -32 - Math.random() * 54, 2200 + Math.random() * 1900, Math.random(), i % 5 === 0));
+    }
+  }
+  function setRunning(root, pool, enabled) {
+    pool.forEach(function (slot) {
+      if (enabled && !slot.animation && typeof slot.node.animate === "function") slot.animation = slot.node.animate(slot.frames, slot.timing);
+      else if (!enabled && slot.animation) { slot.animation.cancel(); slot.animation = null; }
+    });
+    var state = enabled ? "true" : "false";
+    if (root.getAttribute("data-active") !== state) root.setAttribute("data-active", state);
+  }
+  function sync() {
+    if (disposed) return;
+    var enabled = !document.hidden && document.body && !document.body.hasAttribute("data-ds-dark-theme") && !(motion && motion.matches);
+    var showEmbers = enabled && window.innerWidth > 900 && window.innerHeight > 620 && emberRoot.getAttribute("data-orbit-hidden") !== "true";
+    if (enabled) buildCorona();
+    if (showEmbers) buildEmbers();
+    setRunning(solarRoot, corona, enabled);
+    setRunning(emberRoot, embers, showEmbers);
+  }
+  if (motion) motion.addEventListener("change", sync);
+  return {
+    sync:sync,
+    dispose:function () {
+      if (disposed) return;
+      disposed = true;
+      if (motion) motion.removeEventListener("change", sync);
+      setRunning(solarRoot, corona, false); setRunning(emberRoot, embers, false);
+      corona.concat(embers).forEach(function (slot) { slot.node.remove(); });
+      corona = []; embers = [];
+    }
+  };
+}
+
+
     // Orthographic near-side rendering from NASA SVS / LRO LROC + LOLA maps.
     // Pixels are bundled directly: no network, image decoding, or img-src exception.
     var MOON_SIZE = 384;
@@ -356,8 +434,9 @@ function createOrbitSoundscape() {
       " width:clamp(140px,14vw,224px); height:auto; aspect-ratio:1; display:block;",
       " border-radius:50%; corner-shape:round; filter:brightness(1.12); }",
       "body:not([data-ds-dark-theme]) #" + MOON_ID + " { display:none; }",
-      "#" + SUN_ID + " { display:none; position:fixed; z-index:-1; pointer-events:none; top:clamp(54px,7vh,100px); right:clamp(24px,5vw,80px); width:clamp(270px,24vw,380px); height:auto; aspect-ratio:1; filter:saturate(1.12) contrast(1.06); }",
-      "body:not([data-ds-dark-theme]) #" + SUN_ID + " { display:block; }",
+      "#" + SUN_ID + ", #" + SUN_DUST_ID + " { display:none; position:fixed; z-index:-1; pointer-events:none; top:clamp(54px,7vh,100px); right:clamp(24px,5vw,80px); width:clamp(270px,24vw,380px); height:auto; aspect-ratio:1; }",
+      "#" + SUN_ID + " { filter:saturate(1.12) contrast(1.06); }",
+      "body:not([data-ds-dark-theme]) #" + SUN_ID + ", body:not([data-ds-dark-theme]) #" + SUN_DUST_ID + " { display:block; }",
       "#" + METEOR_ID + " { position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; }",
       "#" + METEOR_ID + " > span { position:absolute; width:140px; height:2px; opacity:0;",
       " transform-origin:100% 50%; border-radius:50%; corner-shape:round;",
@@ -372,19 +451,25 @@ function createOrbitSoundscape() {
       " background:radial-gradient(ellipse at 74% 50%,#fff3bb 0%,#ffc345 25%,rgba(246,98,12,.86) 48%,rgba(232,64,10,.24) 65%,transparent 76%); clip-path:polygon(0 50%,24% 28%,46% 30%,68% 7%,96% 28%,100% 50%,92% 78%,66% 95%,47% 70%,25% 72%); }",
       "body:not([data-ds-dark-theme]) #" + METEOR_ID + " > span::after { content:''; position:absolute; right:-1px; top:50%; width:var(--meteor-rock); height:calc(var(--meteor-rock) * .75); transform:translateY(-50%) rotate(-16deg); pointer-events:none; border-radius:43% 57% 38% 62%; corner-shape:round; border:1px solid rgba(136,63,16,.85);",
       " background:radial-gradient(circle at 32% 29%,rgba(55,28,15,.68) 0 12%,transparent 17%),radial-gradient(circle at 69% 62%,rgba(47,25,16,.65) 0 9%,transparent 14%),linear-gradient(135deg,#d3934c,#704122 48%,#3d2920); box-shadow:0 0 2px #ffe991,0 0 5px rgba(255,131,21,.8); }",
-      "#" + ASTRONAUT_ID + ", #" + SKELETON_ID + " { position:fixed; z-index:-1; left:10px; bottom:58px;",
+      "#" + ASTRONAUT_ID + ", #" + SKELETON_ID + ", #" + EMBERS_ID + " { position:fixed; z-index:-1; left:10px; bottom:58px;",
       " width:clamp(180px,17vw,258px); height:auto; aspect-ratio:640/427; display:block;",
       " pointer-events:none; filter:brightness(1.14) drop-shadow(0 0 3px rgba(133,184,238,.22)); transform-origin:50% 50%;",
       " animation:orbit-astronaut-drift 14s ease-in-out infinite; }",
       "#" + SKELETON_ID + " { display:none; filter:contrast(1.08) saturate(1.15) drop-shadow(0 2px 2px rgba(92,39,10,.26)); }",
+      "#" + EMBERS_ID + " { display:none; filter:none; }",
       "body:not([data-ds-dark-theme]) #" + ASTRONAUT_ID + " { display:none; }",
-      "body:not([data-ds-dark-theme]) #" + SKELETON_ID + " { display:block; }",
+      "body:not([data-ds-dark-theme]) #" + SKELETON_ID + ", body:not([data-ds-dark-theme]) #" + EMBERS_ID + " { display:block; }",
       "@keyframes orbit-astronaut-drift { 0%,100% { transform:translate3d(0,2px,0) rotate(-1deg); }",
       " 50% { transform:translate3d(3px,-4px,0) rotate(1deg); } }",
-      "@media(prefers-reduced-motion:reduce) { #" + ASTRONAUT_ID + ", #" + SKELETON_ID + " { animation:none; } }",
+      "@media(prefers-reduced-motion:reduce) { #" + ASTRONAUT_ID + ", #" + SKELETON_ID + ", #" + EMBERS_ID + " { animation:none; } }",
       "@media(prefers-reduced-motion:reduce) { #" + METEOR_ID + " { display:none; } }",
-      "@media(max-width:900px), (max-height:620px) { #" + ASTRONAUT_ID + ", body:not([data-ds-dark-theme]) #" + SKELETON_ID + " { display:none; } }",
-      "#" + ASTRONAUT_ID + "[data-orbit-hidden=true], #" + SKELETON_ID + "[data-orbit-hidden=true] { visibility:hidden; }",
+      "@media(max-width:900px), (max-height:620px) { #" + ASTRONAUT_ID + ", body:not([data-ds-dark-theme]) #" + SKELETON_ID + ", body:not([data-ds-dark-theme]) #" + EMBERS_ID + " { display:none; } }",
+      "#" + ASTRONAUT_ID + "[data-orbit-hidden=true], #" + SKELETON_ID + "[data-orbit-hidden=true], #" + EMBERS_ID + "[data-orbit-hidden=true] { visibility:hidden; }",
+      "#" + SUN_DUST_ID + ", #" + EMBERS_ID + " { overflow:visible; }",
+      "#" + SUN_DUST_ID + " > span, #" + EMBERS_ID + " > span { position:absolute; width:3px; height:3px; opacity:0; pointer-events:none; border-radius:50%; corner-shape:round; background:#ffc047; box-shadow:0 0 2px rgba(183,62,0,.85),0 0 4px rgba(255,145,12,.8); }",
+      "#" + SUN_DUST_ID + " > span[data-streak=true] { width:2px; height:7px; background:linear-gradient(transparent,#ee7f13,#ffde91); }",
+      "#" + EMBERS_ID + " > span { width:2.5px; height:3.5px; background:#f47a0b; box-shadow:0 0 2px #ffd38b,0 0 5px rgba(201,64,8,.8); }",
+      "#" + EMBERS_ID + " > span[data-streak=true] { width:2px; height:4px; background:linear-gradient(#ffdc76,#ed6110,transparent); }",
       "#" + GLOW_ID + " { position:fixed; top:0; left:0; width:320px; height:320px;",
       " z-index:2147483646; pointer-events:none !important; border-radius:50%; corner-shape:round;",
       " opacity:0; transition:opacity 160ms ease; transform:translate3d(-1000px,-1000px,0);",
@@ -409,7 +494,7 @@ function createOrbitSoundscape() {
       "@media(prefers-reduced-motion:reduce) { #" + SPARKS_ID + " { display:none; } body [data-composer-card] { transition:none; } }",
       "@media(prefers-reduced-motion:reduce) { #" + GLOW_ID + " { transition:none; } }",
       "@media(max-width:700px) { #" + MOON_ID + " { width:112px; right:24px; top:72px; opacity:.9; } }",
-      "@media(max-width:700px) { #" + SUN_ID + " { width:200px; right:12px; top:64px; } }",
+      "@media(max-width:700px) { #" + SUN_ID + ", #" + SUN_DUST_ID + " { width:200px; right:12px; top:64px; } }",
       "body[data-ds-dark-theme] ::selection { background:rgba(122,162,255,.30); }"
     ].join("\n");
     Object.keys(RESIZE_AXES).forEach(function (nativeCursor) {
@@ -435,6 +520,9 @@ function createOrbitSoundscape() {
       sun.id = SUN_ID;
       sun.width = sun.height = 512;
       sun.setAttribute("aria-hidden", "true");
+      var solarDust = document.createElement("div");
+      solarDust.id = SUN_DUST_ID;
+      solarDust.setAttribute("aria-hidden", "true");
       var astronauts = document.createElement("canvas");
       astronauts.id = ASTRONAUT_ID;
       astronauts.width = 640;
@@ -445,6 +533,10 @@ function createOrbitSoundscape() {
       skeleton.width = 640;
       skeleton.height = 427;
       skeleton.setAttribute("aria-hidden", "true");
+      var embers = document.createElement("div");
+      embers.id = EMBERS_ID;
+      embers.setAttribute("aria-hidden", "true");
+      var solarParticles = createOrbitSolarParticles(solarDust, embers);
       var meteors = document.createElement("div");
       meteors.id = METEOR_ID;
       meteors.setAttribute("aria-hidden", "true");
@@ -605,7 +697,9 @@ function createOrbitSoundscape() {
         if (!Number.isFinite(width)) width = sidebar ? sidebar.getBoundingClientRect().width : 280;
         if ((frame && frame.getAttribute("data-sidebar-collapsed") === "true") || width < 150) {
           astronauts.setAttribute("data-orbit-hidden", "true");
-          skeleton.setAttribute("data-orbit-hidden", "true"); return;
+          skeleton.setAttribute("data-orbit-hidden", "true");
+          embers.setAttribute("data-orbit-hidden", "true");
+          solarParticles.sync(); return;
         }
         var listBottom = 0;
         document.querySelectorAll("[data-row-key]").forEach(function (row) {
@@ -621,6 +715,9 @@ function createOrbitSoundscape() {
         astronauts.setAttribute("data-orbit-hidden", size < 135 ? "true" : "false");
         skeleton.style.width = Math.max(0, size) + "px";
         skeleton.setAttribute("data-orbit-hidden", size < 135 ? "true" : "false");
+        embers.style.width = Math.max(0, size) + "px";
+        embers.setAttribute("data-orbit-hidden", size < 135 ? "true" : "false");
+        solarParticles.sync();
       }
       function scheduleLayout() {
         if (!disposed && !layoutFrame && typeof window.requestAnimationFrame === "function") layoutFrame = window.requestAnimationFrame(layoutAstronaut);
@@ -862,12 +959,14 @@ function createOrbitSoundscape() {
       function visibility() {
         if (document.hidden) leaveWindow();
         syncMeteors();
+        solarParticles.sync();
       }
 
       function paint() {
         if (disposed) return;
         try { renderStars(stars, document.body.hasAttribute("data-ds-dark-theme")); }
         catch (_) { /* A decorative canvas must never stop the application. */ }
+        solarParticles.sync();
       }
       function resize() {
         hideGlow();
@@ -883,8 +982,10 @@ function createOrbitSoundscape() {
         if (body && !layer.parentNode) body.appendChild(layer);
         if (body && !moon.parentNode) body.appendChild(moon);
         if (body && !sun.parentNode) body.appendChild(sun);
+        if (body && !solarDust.parentNode) body.appendChild(solarDust);
         if (body && !astronauts.parentNode) body.appendChild(astronauts);
         if (body && !skeleton.parentNode) body.appendChild(skeleton);
+        if (body && !embers.parentNode) body.appendChild(embers);
         if (body && !meteors.parentNode) body.appendChild(meteors);
         if (body && !glow.parentNode) body.appendChild(glow);
         if (body && !sparks.parentNode) body.appendChild(sparks);
@@ -930,6 +1031,7 @@ function createOrbitSoundscape() {
         disposed = true;
         clearTimeout(timer);
         stopMeteors();
+        solarParticles.dispose();
         if (motionQuery) motionQuery.removeEventListener("change", syncMeteors);
         hideGlow();
         sound.dispose();
@@ -962,8 +1064,10 @@ function createOrbitSoundscape() {
         if (layer.parentNode) layer.parentNode.removeChild(layer);
         if (moon.parentNode) moon.parentNode.removeChild(moon);
         if (sun.parentNode) sun.parentNode.removeChild(sun);
+        if (solarDust.parentNode) solarDust.parentNode.removeChild(solarDust);
         if (astronauts.parentNode) astronauts.parentNode.removeChild(astronauts);
         if (skeleton.parentNode) skeleton.parentNode.removeChild(skeleton);
+        if (embers.parentNode) embers.parentNode.removeChild(embers);
         if (meteors.parentNode) meteors.parentNode.removeChild(meteors);
         if (glow.parentNode) glow.parentNode.removeChild(glow);
         if (sparks.parentNode) sparks.parentNode.removeChild(sparks);

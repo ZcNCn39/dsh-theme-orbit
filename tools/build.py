@@ -68,6 +68,7 @@ tokens = json.loads(token_path.read_text(encoding='utf-8'))
 template = (ROOT / 'tools/client.template.js').read_text(encoding='utf-8')
 client = template.replace('__ORBIT_TOKENS__', json.dumps(tokens, ensure_ascii=False))
 client = client.replace('__ORBIT_SOUND_ENGINE__', (ROOT / 'tools/soundscape.js').read_text(encoding='utf-8'))
+client = client.replace('__ORBIT_SOLAR_PARTICLES__', (ROOT / 'tools/solar-particles.js').read_text(encoding='utf-8'))
 rocket_svg = (ROOT / 'assets/rocket-cursor.svg').read_text(encoding='utf-8')
 client = client.replace('__ORBIT_ROCKET_SVG__', json.dumps(rocket_svg))
 # Three compact nozzle states fit inside the SAME native 32px cursor canvas.
