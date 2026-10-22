@@ -306,6 +306,73 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
 }
 
 
+    // A theme-owned caption control next to the preload's Application/Edit menus.
+// Use the host service so settings, tokens, native caption colors and theme
+// artwork all change together, and the host persists the user's preference.
+function createOrbitThemeToggle(theme) {
+  var ID = "dsh-theme-orbit-ratio";
+  var mounts = [], disposed = false;
+  function isDark() {
+    try {
+      var snapshot = theme && typeof theme.getTheme === "function" ? theme.getTheme() : null;
+      if (snapshot && snapshot.active) return snapshot.active.colorScheme === "dark";
+    } catch (_) {}
+    return !!document.body && document.body.hasAttribute("data-ds-dark-theme");
+  }
+  function sync() {
+    if (disposed) return;
+    var dark = isDark();
+    mounts.forEach(function (item) {
+      item.button.setAttribute("aria-checked", String(dark));
+      item.button.setAttribute("data-mode", dark ? "dark" : "light");
+      item.button.title = (dark ? "当前深色 · 点击切换浅色模式" : "当前浅色 · 点击切换深色模式");
+    });
+  }
+  function remove(item) {
+    item.button.removeEventListener("pointerdown", item.keepFocus);
+    item.button.removeEventListener("mousedown", item.keepFocus);
+    item.button.removeEventListener("click", item.toggle);
+    item.button.remove(); item.sheet.remove();
+  }
+  return {
+    install:function (root) {
+      if (disposed || !root || !root.querySelector('[role="menubar"]') || !theme || typeof theme.setTheme !== "function") return;
+      mounts = mounts.filter(function (item) { if (item.root.host.isConnected) return true; remove(item); return false; });
+      if (root.getElementById(ID)) return;
+      var sheet = document.createElement("style");
+      sheet.id = ID + "-style";
+      sheet.textContent = '#' + ID + '{display:inline-flex;align-items:center;gap:6px;margin-left:4px;white-space:nowrap;-webkit-app-region:no-drag}' +
+        '#' + ID + ' svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}' +
+        '#' + ID + '[data-mode=dark] [data-ratio-sun],#' + ID + '[data-mode=light] [data-ratio-moon]{display:none}' +
+        '#' + ID + ' svg{color:var(--dsw-alias-brand-primary)}';
+      var button = document.createElement("button");
+      button.id = ID; button.type = "button";
+      button.setAttribute("data-orbit-theme-toggle", "");
+      button.setAttribute("role", "switch");
+      button.setAttribute("aria-label", "Ratio 深色模式");
+      button.innerHTML = '<span>Ratio</span><svg data-ratio-sun viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg><svg data-ratio-moon viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14a8.6 8.6 0 0 1-10.5-10.5A8.7 8.7 0 1 0 20.5 14Z"/></svg>';
+      var item = {root:root,button:button,sheet:sheet};
+      item.keepFocus = function (event) { if (event.button === 0) event.preventDefault(); };
+      item.toggle = function () {
+        if (disposed) return;
+        try {
+          var result = theme.setTheme(isDark() ? "light" : "dark");
+          sync();
+          if (result && typeof result.then === "function") result.then(sync, function () { button.title = "主题切换失败，请重试"; });
+        } catch (_) { button.title = "主题切换失败，请重试"; }
+      };
+      button.addEventListener("pointerdown", item.keepFocus);
+      button.addEventListener("mousedown", item.keepFocus);
+      button.addEventListener("click", item.toggle);
+      // A sibling of the menubar preserves its existing arrow-key navigation.
+      root.appendChild(sheet); root.appendChild(button); mounts.push(item); sync();
+    },
+    sync:sync,
+    dispose:function () { if (disposed) return; disposed = true; mounts.forEach(remove); mounts = []; }
+  };
+}
+
+
     // Orthographic near-side rendering from NASA SVS / LRO LROC + LOLA maps.
     // Pixels are bundled directly: no network, image decoding, or img-src exception.
     var MOON_SIZE = 384;
@@ -503,7 +570,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
       CSS += "\n" + selector + "," + selector + " * { cursor:" + cursor + " !important; }";
     });
 
-    function mount() {
+    function mount(theme) {
       if (typeof document === "undefined") return function () {};
       var el = document.createElement("style");
       el.id = STYLE_ID;
@@ -550,6 +617,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
       var observer = null;
       var menuObserver = null;
       var menuSheets = [];
+      var themeToggle = createOrbitThemeToggle(theme);
       var timer = null;
       var disposed = false;
       var sound = createOrbitSoundscape();
@@ -670,7 +738,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
       }
       function startBoost(event) {
         if (disposed || event.button !== 0 || event.pointerType === "touch") return;
-        if (realTarget(event).closest && realTarget(event).closest("#" + SOUND_ID)) return;
+        if (realTarget(event).closest && realTarget(event).closest("#" + SOUND_ID + ",[data-orbit-theme-toggle]")) return;
         updateThemedCursor(event);
         if (document.body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket" && !inMenu(realTarget(event))) return;
         pointerX = event.clientX;
@@ -738,12 +806,15 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
         // shadow root. Document selectors cannot override their cursor:default.
         document.querySelectorAll("[data-windows-menu]").forEach(function (host) {
           var root = host.shadowRoot;
-          if (!root || root.getElementById(STYLE_ID + "-menubar")) return;
-          var sheet = document.createElement("style");
-          sheet.id = STYLE_ID + "-menubar";
-          sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
-          root.appendChild(sheet);
-          menuSheets.push(sheet);
+          if (!root) return;
+          if (!root.getElementById(STYLE_ID + "-menubar")) {
+            var sheet = document.createElement("style");
+            sheet.id = STYLE_ID + "-menubar";
+            sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
+            root.appendChild(sheet);
+            menuSheets.push(sheet);
+          }
+          themeToggle.install(root);
         });
       }
 
@@ -967,6 +1038,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
         try { renderStars(stars, document.body.hasAttribute("data-ds-dark-theme")); }
         catch (_) { /* A decorative canvas must never stop the application. */ }
         solarParticles.sync();
+        themeToggle.sync();
       }
       function resize() {
         hideGlow();
@@ -1035,6 +1107,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
         if (motionQuery) motionQuery.removeEventListener("change", syncMeteors);
         hideGlow();
         sound.dispose();
+        themeToggle.dispose();
         if (layoutFrame) window.cancelAnimationFrame(layoutFrame);
         sparkNodes.forEach(function (node) { node.getAnimations().forEach(function (animation) { animation.cancel(); }); node.remove(); });
         sparkNodes.clear();
@@ -1080,7 +1153,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
       apply: (ctx) => {
         var install = () => {
           var disposeTokens = ctx.theme.overrideTokens(SOURCE, TOKENS);
-          var disposeStyle = mount();
+          var disposeStyle = mount(ctx.theme);
           return () => { disposeStyle(); disposeTokens(); };
         };
         if (typeof ctx.effect === "function") ctx.effect(install);
@@ -1092,6 +1165,7 @@ function createOrbitSolarParticles(solarRoot, emberRoot) {
 </script>
 <script>
 var tokens;function syncScheme(){var mode=document.body.hasAttribute('data-ds-dark-theme')?'dark':'light';Object.entries(tokens).forEach(([name,pair])=>document.body.style.setProperty(name,pair[mode]));document.querySelector('[data-preview-celestial]').textContent=mode==='dark'?'月面与星空':'太阳与星云';document.querySelector('[data-preview-character]').textContent=mode==='dark'?'漂浮宇航员':'燃烧的骷髅';}
-window.orbitModule.factory().apply({effect:f=>window.disposeOrbit=f(),theme:{overrideTokens:(source,t)=>{tokens=t;syncScheme();return ()=>{};}}});
+window.orbitPreviewTheme={overrideTokens:(source,t)=>{tokens=t;syncScheme();return ()=>{};},getTheme:()=>({active:{colorScheme:document.body.hasAttribute('data-ds-dark-theme')?'dark':'light'}}),setTheme:mode=>{document.body.toggleAttribute('data-ds-dark-theme',mode==='dark');syncScheme();}};
+window.orbitModule.factory().apply({effect:f=>window.disposeOrbit=f(),theme:window.orbitPreviewTheme});
 document.getElementById('scheme').onclick=()=>{document.body.toggleAttribute('data-ds-dark-theme');syncScheme();};
 </script></body></html>

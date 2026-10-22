@@ -38,6 +38,8 @@ window.__ModuleLoader__.load({
 
     __ORBIT_SOLAR_PARTICLES__
 
+    __ORBIT_THEME_TOGGLE__
+
     // Orthographic near-side rendering from NASA SVS / LRO LROC + LOLA maps.
     // Pixels are bundled directly: no network, image decoding, or img-src exception.
     var MOON_SIZE = 384;
@@ -235,7 +237,7 @@ window.__ModuleLoader__.load({
       CSS += "\n" + selector + "," + selector + " * { cursor:" + cursor + " !important; }";
     });
 
-    function mount() {
+    function mount(theme) {
       if (typeof document === "undefined") return function () {};
       var el = document.createElement("style");
       el.id = STYLE_ID;
@@ -282,6 +284,7 @@ window.__ModuleLoader__.load({
       var observer = null;
       var menuObserver = null;
       var menuSheets = [];
+      var themeToggle = createOrbitThemeToggle(theme);
       var timer = null;
       var disposed = false;
       var sound = createOrbitSoundscape();
@@ -402,7 +405,7 @@ window.__ModuleLoader__.load({
       }
       function startBoost(event) {
         if (disposed || event.button !== 0 || event.pointerType === "touch") return;
-        if (realTarget(event).closest && realTarget(event).closest("#" + SOUND_ID)) return;
+        if (realTarget(event).closest && realTarget(event).closest("#" + SOUND_ID + ",[data-orbit-theme-toggle]")) return;
         updateThemedCursor(event);
         if (document.body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket" && !inMenu(realTarget(event))) return;
         pointerX = event.clientX;
@@ -470,12 +473,15 @@ window.__ModuleLoader__.load({
         // shadow root. Document selectors cannot override their cursor:default.
         document.querySelectorAll("[data-windows-menu]").forEach(function (host) {
           var root = host.shadowRoot;
-          if (!root || root.getElementById(STYLE_ID + "-menubar")) return;
-          var sheet = document.createElement("style");
-          sheet.id = STYLE_ID + "-menubar";
-          sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
-          root.appendChild(sheet);
-          menuSheets.push(sheet);
+          if (!root) return;
+          if (!root.getElementById(STYLE_ID + "-menubar")) {
+            var sheet = document.createElement("style");
+            sheet.id = STYLE_ID + "-menubar";
+            sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
+            root.appendChild(sheet);
+            menuSheets.push(sheet);
+          }
+          themeToggle.install(root);
         });
       }
 
@@ -699,6 +705,7 @@ window.__ModuleLoader__.load({
         try { renderStars(stars, document.body.hasAttribute("data-ds-dark-theme")); }
         catch (_) { /* A decorative canvas must never stop the application. */ }
         solarParticles.sync();
+        themeToggle.sync();
       }
       function resize() {
         hideGlow();
@@ -767,6 +774,7 @@ window.__ModuleLoader__.load({
         if (motionQuery) motionQuery.removeEventListener("change", syncMeteors);
         hideGlow();
         sound.dispose();
+        themeToggle.dispose();
         if (layoutFrame) window.cancelAnimationFrame(layoutFrame);
         sparkNodes.forEach(function (node) { node.getAnimations().forEach(function (animation) { animation.cancel(); }); node.remove(); });
         sparkNodes.clear();
@@ -812,7 +820,7 @@ window.__ModuleLoader__.load({
       apply: (ctx) => {
         var install = () => {
           var disposeTokens = ctx.theme.overrideTokens(SOURCE, TOKENS);
-          var disposeStyle = mount();
+          var disposeStyle = mount(ctx.theme);
           return () => { disposeStyle(); disposeTokens(); };
         };
         if (typeof ctx.effect === "function") ctx.effect(install);

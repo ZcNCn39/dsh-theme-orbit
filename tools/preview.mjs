@@ -33,7 +33,8 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
 <script>${source.replace(/<\/script/gi,'<\\/script')}</script>
 <script>
 var tokens;function syncScheme(){var mode=document.body.hasAttribute('data-ds-dark-theme')?'dark':'light';Object.entries(tokens).forEach(([name,pair])=>document.body.style.setProperty(name,pair[mode]));document.querySelector('[data-preview-celestial]').textContent=mode==='dark'?'月面与星空':'太阳与星云';document.querySelector('[data-preview-character]').textContent=mode==='dark'?'漂浮宇航员':'燃烧的骷髅';}
-window.orbitModule.factory().apply({effect:f=>window.disposeOrbit=f(),theme:{overrideTokens:(source,t)=>{tokens=t;syncScheme();return ()=>{};}}});
+window.orbitPreviewTheme={overrideTokens:(source,t)=>{tokens=t;syncScheme();return ()=>{};},getTheme:()=>({active:{colorScheme:document.body.hasAttribute('data-ds-dark-theme')?'dark':'light'}}),setTheme:mode=>{document.body.toggleAttribute('data-ds-dark-theme',mode==='dark');syncScheme();}};
+window.orbitModule.factory().apply({effect:f=>window.disposeOrbit=f(),theme:window.orbitPreviewTheme});
 document.getElementById('scheme').onclick=()=>{document.body.toggleAttribute('data-ds-dark-theme');syncScheme();};
 </script></body></html>`;
 fs.mkdirSync(path.join(root,'docs'),{recursive:true});
