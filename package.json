@@ -1,6 +1,6 @@
 {
   "name": "dsh-theme-orbit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "license": "MIT",
   "author": "ZcNCn39",
@@ -10,9 +10,9 @@
   },
   "homepage": "https://github.com/ZcNCn39/dsh-theme-orbit#readme",
   "bugs": "https://github.com/ZcNCn39/dsh-theme-orbit/issues",
-  "keywords": ["deepseek", "dsh", "theme", "space", "moon"],
-  "files": ["lib", "cordis.patch.yml", "README.md", "LICENSE", "THIRD_PARTY_NOTICES.md"],
-  "description": "Orbit (轨道) — a space theme for DeepSeek Harness: deep-space surfaces over an injected starfield, starlight-blue accent, and a moon-dust light palette. Ships as a --dsw-* token layer plus one scoped stylesheet.",
+  "keywords": ["deepseek", "dsh", "theme", "space", "moon", "sound-effects"],
+  "files": ["lib", "cordis.patch.yml", "README.md", "CHANGELOG.md", "LICENSE", "THIRD_PARTY_NOTICES.md"],
+  "description": "Orbit (轨道) — a DeepSeek Harness space theme with a real lunar surface, starfield, floating astronaut, native rocket cursors, meteors and optional locally synthesized sound effects.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {

@@ -10,6 +10,7 @@ window.__ModuleLoader__.load({
     var ASTRONAUT_ID = SOURCE + "-astronauts";
     var METEOR_ID = SOURCE + "-meteors";
     var SPARKS_ID = SOURCE + "-sparks";
+    var SOUND_ID = SOURCE + "-sound";
     var CURSOR_ATTRIBUTE = "data-orbit-rocket-cursor";
     // Keep the native cursor <=32 DIP: Chromium drops larger images when
     // they cross viewport edges (including the right-hand conversation rail).
@@ -28,6 +29,8 @@ window.__ModuleLoader__.load({
       "nesw-resize":"nesw", "ne-resize":"nesw", "sw-resize":"nesw"
     };
     var TOKENS = __ORBIT_TOKENS__;
+
+    __ORBIT_SOUND_ENGINE__
 
     // Orthographic near-side rendering from NASA SVS / LRO LROC + LOLA maps.
     // Pixels are bundled directly: no network, image decoding, or img-src exception.
@@ -182,6 +185,15 @@ window.__ModuleLoader__.load({
       "#" + GLOW_ID + "[data-context=input] { background-size:45% 45%; }",
       "#" + SPARKS_ID + " { position:fixed; inset:0; z-index:2147483647; overflow:hidden; pointer-events:none; }",
       "#" + SPARKS_ID + " > span { position:absolute; width:3px; height:3px; border-radius:50%; corner-shape:round; background:#fbd59c; box-shadow:0 0 4px rgba(146,217,255,.6); }",
+      "#" + SOUND_ID + " { position:fixed; right:18px; bottom:14px; z-index:100; display:flex; flex-direction:row-reverse; align-items:center; gap:7px; padding:3px; border:1px solid var(--dsw-alias-border-l2); border-radius:18px; corner-shape:round; background:var(--dsw-alias-bg-layer-1); color:var(--dsw-alias-label-secondary); opacity:.72; }",
+      "#" + SOUND_ID + ":hover, #" + SOUND_ID + ":focus-within { opacity:1; }",
+      "#" + SOUND_ID + " button { display:grid; place-items:center; width:28px; height:28px; padding:0; border:0; border-radius:50%; corner-shape:round; background:transparent; color:inherit; cursor:pointer; }",
+      "#" + SOUND_ID + " button:hover { color:var(--dsw-alias-brand-primary); background:var(--dsw-alias-interactive-bg-hover); }",
+      "#" + SOUND_ID + " button:focus-visible { outline:2px solid var(--dsw-alias-brand-primary); outline-offset:2px; }",
+      "#" + SOUND_ID + " svg { width:16px; height:16px; }",
+      "#" + SOUND_ID + " label { display:none; align-items:center; gap:6px; padding-left:8px; font:11px sans-serif; white-space:nowrap; }",
+      "#" + SOUND_ID + ":hover label, #" + SOUND_ID + ":focus-within label { display:flex; }",
+      "#" + SOUND_ID + " input { width:64px; margin:0; accent-color:var(--dsw-alias-brand-primary); cursor:pointer; }",
       "@media(prefers-reduced-motion:reduce) { #" + SPARKS_ID + " { display:none; } body [data-composer-card] { transition:none; } }",
       "@media(prefers-reduced-motion:reduce) { #" + GLOW_ID + " { transition:none; } }",
       "@media(max-width:700px) { #" + MOON_ID + " { width:112px; right:24px; top:72px; opacity:.9; } }",
@@ -226,6 +238,37 @@ window.__ModuleLoader__.load({
       var menuSheets = [];
       var timer = null;
       var disposed = false;
+      var sound = createOrbitSoundscape();
+      var soundControl = document.createElement("div");
+      soundControl.id = SOUND_ID;
+      soundControl.setAttribute("role", "group");
+      soundControl.setAttribute("aria-label", "Orbit 主题音效");
+      soundControl.innerHTML = '<button type="button" aria-label="静音太空音效"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4 6 8H3v8h3l5 4Z"/><path data-sound-wave d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/><path data-sound-mute d="m15 9 6 6m0-6-6 6"/></svg></button><label>音量<input type="range" min="0" max="100" step="1" aria-label="太空音效音量"></label>';
+      var soundButton = soundControl.querySelector("button");
+      var soundSlider = soundControl.querySelector("input");
+      function updateSoundControl() {
+        var settings = sound.settings();
+        var silent = settings.muted || settings.volume === 0;
+        soundButton.setAttribute("aria-pressed", String(!silent));
+        soundButton.setAttribute("aria-label", silent ? "开启太空音效" : "静音太空音效");
+        soundButton.title = settings.supported ? (silent ? "太空音效已静音" : "太空音效 " + Math.round(settings.volume * 100) + "%") + " · 悬停调整音量" : "当前环境不支持太空音效";
+        soundButton.disabled = !settings.supported;
+        soundControl.querySelector("[data-sound-wave]").style.display = silent ? "none" : "";
+        soundControl.querySelector("[data-sound-mute]").style.display = silent ? "" : "none";
+        soundSlider.value = String(Math.round(settings.volume * 100));
+      }
+      soundButton.addEventListener("click", function () {
+        var settings = sound.settings();
+        sound.setMuted(!settings.muted && settings.volume > 0);
+        if (!sound.settings().muted) { if (!settings.volume) sound.setVolume(0.18); sound.unlock().then(function (ok) { if (ok && !disposed) sound.click(); }); }
+        updateSoundControl();
+      });
+      soundSlider.addEventListener("input", function () {
+        sound.setVolume(Number(soundSlider.value) / 100);
+        if (sound.settings().volume > 0) { sound.setMuted(false); sound.unlock(); }
+        updateSoundControl();
+      });
+      updateSoundControl();
       var glowFrame = 0;
       var pointerX = 0;
       var pointerY = 0;
@@ -308,10 +351,12 @@ window.__ModuleLoader__.load({
         if (boostTimer !== null) window.clearTimeout(boostTimer);
         boostTimer = null;
         releaseBoostTarget();
+        sound.stopThrust();
         if (document.body) document.body.removeAttribute("data-orbit-boosting");
       }
       function startBoost(event) {
         if (disposed || event.button !== 0 || event.pointerType === "touch") return;
+        if (realTarget(event).closest && realTarget(event).closest("#" + SOUND_ID)) return;
         updateThemedCursor(event);
         if (document.body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket" && !inMenu(realTarget(event))) return;
         pointerX = event.clientX;
@@ -321,6 +366,7 @@ window.__ModuleLoader__.load({
         boostFrame = 0;
         applyBoostCursor(realTarget(event));
         document.body.setAttribute("data-orbit-boosting", "");
+        sound.startThrust();
         emitSpark();
         if (!(motionQuery && motionQuery.matches)) boostTimer = window.setTimeout(tickBoost, 90);
       }
@@ -399,6 +445,8 @@ window.__ModuleLoader__.load({
         var depth = Math.random();
         var far = depth < 0.68;
         var warm = depth > 0.93;
+        var focused = document.activeElement;
+        if (warm && (!focused || !isTextInput(focused))) sound.meteor();
         var length = far ? 55 + Math.random() * 65 : 110 + Math.random() * 100;
         var angle = 22 + Math.random() * 24;
         var radians = angle * Math.PI / 180;
@@ -571,8 +619,22 @@ window.__ModuleLoader__.load({
         pointerEvent = null;
         if (document.body) document.body.removeAttribute(CURSOR_ATTRIBUTE);
       }
+      function leaveWindow() { hideGlow(); sound.silence(); }
+      function unlockSound(event) {
+        if (!event.isTrusted || document.hidden) return;
+        var target = realTarget(event);
+        if (target.closest && target.closest("#" + SOUND_ID)) return;
+        sound.unlock();
+      }
+      function clickSound(event) {
+        if (!event.isTrusted || disposed || document.hidden) return;
+        var target = realTarget(event);
+        if (!target || !target.closest || target.closest("#" + SOUND_ID) || isTextInput(target)) return;
+        var control = target.closest('button,a[href],[role="button"],[role="tab"],[role="menuitem"],[data-row-key]');
+        if (control && !control.disabled && control.getAttribute("aria-disabled") !== "true") sound.click();
+      }
       function visibility() {
-        if (document.hidden) hideGlow();
+        if (document.hidden) leaveWindow();
         syncMeteors();
       }
 
@@ -598,6 +660,7 @@ window.__ModuleLoader__.load({
         if (body && !meteors.parentNode) body.appendChild(meteors);
         if (body && !glow.parentNode) body.appendChild(glow);
         if (body && !sparks.parentNode) body.appendChild(sparks);
+        if (body && !soundControl.parentNode) body.appendChild(soundControl);
         try { renderMoon(moon); } catch (_) {}
         renderAstronauts(astronauts).catch(function () { /* Decorative only. */ });
         paint();
@@ -606,15 +669,18 @@ window.__ModuleLoader__.load({
         scheduleLayout();
         if (typeof window.addEventListener === "function") {
           window.addEventListener("resize", resize);
-          window.addEventListener("blur", hideGlow);
-          window.addEventListener("pagehide", hideGlow);
+          window.addEventListener("blur", leaveWindow);
+          window.addEventListener("pagehide", leaveWindow);
           window.addEventListener("pointerup", endBoost, true);
         }
         if (typeof document.addEventListener === "function") {
+          document.addEventListener("pointerdown", unlockSound, { capture:true, passive:true });
+          document.addEventListener("keydown", unlockSound, { capture:true, passive:true });
+          document.addEventListener("click", clickSound, { capture:true, passive:true });
           document.addEventListener("pointermove", moveGlow, { capture:true, passive:true });
           document.addEventListener("pointerdown", startBoost, { capture:true, passive:true });
           document.addEventListener("scroll", layoutScrolled, { capture:true, passive:true });
-          document.addEventListener("pointerleave", hideGlow);
+          document.addEventListener("pointerleave", leaveWindow);
           document.addEventListener("pointercancel", hideGlow, true);
           document.addEventListener("visibilitychange", visibility);
         }
@@ -636,6 +702,7 @@ window.__ModuleLoader__.load({
         stopMeteors();
         if (motionQuery) motionQuery.removeEventListener("change", syncMeteors);
         hideGlow();
+        sound.dispose();
         if (layoutFrame) window.cancelAnimationFrame(layoutFrame);
         sparkNodes.forEach(function (node) { node.getAnimations().forEach(function (animation) { animation.cancel(); }); node.remove(); });
         sparkNodes.clear();
@@ -645,16 +712,19 @@ window.__ModuleLoader__.load({
         menuSheets.forEach(function (sheet) { if (sheet.parentNode) sheet.parentNode.removeChild(sheet); });
         if (typeof window.removeEventListener === "function") {
           window.removeEventListener("resize", resize);
-          window.removeEventListener("blur", hideGlow);
-          window.removeEventListener("pagehide", hideGlow);
+          window.removeEventListener("blur", leaveWindow);
+          window.removeEventListener("pagehide", leaveWindow);
           window.removeEventListener("pointerup", endBoost, true);
         }
         if (typeof document.removeEventListener === "function") {
+          document.removeEventListener("pointerdown", unlockSound, true);
+          document.removeEventListener("keydown", unlockSound, true);
+          document.removeEventListener("click", clickSound, true);
           document.removeEventListener("DOMContentLoaded", attach);
           document.removeEventListener("pointermove", moveGlow, true);
           document.removeEventListener("pointerdown", startBoost, true);
           document.removeEventListener("scroll", layoutScrolled, true);
-          document.removeEventListener("pointerleave", hideGlow);
+          document.removeEventListener("pointerleave", leaveWindow);
           document.removeEventListener("pointercancel", hideGlow, true);
           document.removeEventListener("visibilitychange", visibility);
         }
@@ -665,6 +735,7 @@ window.__ModuleLoader__.load({
         if (meteors.parentNode) meteors.parentNode.removeChild(meteors);
         if (glow.parentNode) glow.parentNode.removeChild(glow);
         if (sparks.parentNode) sparks.parentNode.removeChild(sparks);
+        if (soundControl.parentNode) soundControl.parentNode.removeChild(soundControl);
       };
     }
 
