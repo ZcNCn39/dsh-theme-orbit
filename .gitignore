@@ -9,3 +9,4 @@ __pycache__/
 *.tgz
 .DS_Store
 Thumbs.db
+.test-output/

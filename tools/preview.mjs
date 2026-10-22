@@ -23,11 +23,11 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
 @media(max-width:900px){aside{width:200px}.intro,.compose{left:7%;right:7%}.intro h1{font-size:32px}}
 </style></head><body data-ds-dark-theme>
 <div class="app"><aside><div class="brand">ORBIT <small>SPACE THEME</small></div><button>＋ 新会话</button>
-<div class="muted">◇ 插件</div><div class="label muted">工作区</div><div class="item selected">▱ orbit-demo</div><div class="item muted">▱ theme-preview</div>
+<div class="muted">◇ 插件</div><div class="label muted">工作区</div><div class="item selected" data-row-key="workspace:demo">▱ orbit-demo</div><div class="item muted">▱ theme-preview</div>
 <div class="label muted">探索</div><div class="item muted">月面与星空</div><div class="item muted">随机流星</div><div class="item muted">漂浮宇航员</div></aside>
 <main><header><span>Orbit · 轨道</span><span class="muted">独立主题演示</span><button id="scheme">切换明暗</button></header>
 <section class="intro"><h1>探索深空</h1><p>把灵感留在星河之间</p></section>
-<div class="compose"><textarea aria-label="演示输入框" placeholder="从这里开始，写下你的下一个想法…"></textarea><div class="toolbar"><span>＋　太空主题 · 演示工作区</span><button aria-label="演示按钮">↑</button></div></div>
+<div class="compose" data-composer-card><textarea aria-label="演示输入框" placeholder="从这里开始，写下你的下一个想法…"></textarea><div class="toolbar"><span>＋　太空主题 · 演示工作区</span><button aria-label="演示按钮">↑</button></div></div>
 <div class="caption">ORBIT / COMMUNITY THEME / INDEPENDENT PREVIEW</div></main></div>
 <script>window.__ModuleLoader__={load:d=>window.orbitModule=d};</script>
 <script>${source.replace(/<\/script/gi,'<\\/script')}</script>
