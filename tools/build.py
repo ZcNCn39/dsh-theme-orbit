@@ -71,6 +71,12 @@ rocket_svg = (ROOT / 'assets/rocket-cursor.svg').read_text(encoding='utf-8')
 client = client.replace('__ORBIT_ROCKET_SVG__', json.dumps(rocket_svg))
 text_svg = (ROOT / 'assets/text-cursor.svg').read_text(encoding='utf-8')
 client = client.replace('__ORBIT_TEXT_CURSOR_SVG__', json.dumps(text_svg))
+resize_svg = (ROOT / 'assets/resize-cursor.svg').read_text(encoding='utf-8')
+resize_svgs = {
+    axis: resize_svg.replace('<g id="resize-axis">', f'<g id="resize-axis" transform="rotate({angle} 16 16)">')
+    for axis, angle in [('ew', 0), ('ns', 90), ('nwse', 45), ('nesw', -45)]
+}
+client = client.replace('__ORBIT_RESIZE_SVGS__', json.dumps(resize_svgs))
 client = client.replace('__ORBIT_MOON_PIXELS__', base64.b64encode(pixels).decode('ascii'))
 # Export the generated cutout to a compact, alpha-preserving runtime pixel asset.
 # Bundled pixels draw without remote requests or a CSP img-src/data exemption.

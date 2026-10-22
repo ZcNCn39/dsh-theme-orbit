@@ -17,6 +17,13 @@ window.__ModuleLoader__.load({
     // The 32px SVG scales its 36-unit drawing; the nose hotspot is now (6,6).
     var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_ROCKET_SVG__) + '") 6 6, auto';
     var TEXT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_TEXT_CURSOR_SVG__) + '") 16 16, text';
+    var RESIZE_SVGS = __ORBIT_RESIZE_SVGS__;
+    var RESIZE_AXES = {
+      "col-resize":"ew", "ew-resize":"ew", "e-resize":"ew", "w-resize":"ew",
+      "row-resize":"ns", "ns-resize":"ns", "n-resize":"ns", "s-resize":"ns",
+      "nwse-resize":"nwse", "nw-resize":"nwse", "se-resize":"nwse",
+      "nesw-resize":"nesw", "ne-resize":"nesw", "sw-resize":"nesw"
+    };
     var TOKENS = __ORBIT_TOKENS__;
 
     // Orthographic near-side rendering from NASA SVS / LRO LROC + LOLA maps.
@@ -185,6 +192,11 @@ window.__ModuleLoader__.load({
       "@media(max-width:700px) { #" + MOON_ID + " { width:112px; right:24px; top:72px; opacity:.9; } }",
       "body[data-ds-dark-theme] ::selection { background:rgba(122,162,255,.30); }"
     ].join("\n");
+    Object.keys(RESIZE_AXES).forEach(function (nativeCursor) {
+      var cursor = 'url("data:image/svg+xml,' + encodeURIComponent(RESIZE_SVGS[RESIZE_AXES[nativeCursor]]) + '") 16 16, ' + nativeCursor;
+      var selector = 'body[' + CURSOR_ATTRIBUTE + '="' + nativeCursor + '"]';
+      CSS += "\n" + selector + "," + selector + " * { cursor:" + cursor + " !important; }";
+    });
 
     function mount() {
       if (typeof document === "undefined") return function () {};
@@ -479,9 +491,12 @@ window.__ModuleLoader__.load({
           cursorNative = original.cursor;
           cursorSelectable = original.userSelect !== "none" && !target.closest('button,a[href],label,summary,[role="button"],[role="tab"],[role="menuitem"],[role="option"]');
         }
-        // Resize, disabled, vertical text and drag cursors stay native.
+        // Keep resize direction and native drag behavior, with an orbital skin.
+        // Disabled, vertical text and other special drag cursors stay native.
         if (inMenu(target)) {
           body.setAttribute(CURSOR_ATTRIBUTE, "rocket");
+        } else if (RESIZE_AXES[cursorNative]) {
+          body.setAttribute(CURSOR_ATTRIBUTE, cursorNative);
         } else if (cursorNative === "text") {
           body.setAttribute(CURSOR_ATTRIBUTE, "text");
         } else if (cursorNative === "auto" || cursorNative === "default" || cursorNative === "pointer") {
