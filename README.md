@@ -1,0 +1,124 @@
+# Orbit · 轨道
+
+给 **DeepSeek Harness（DSH）** 的开源太空主题：真实月面、漂浮宇航员、随机流星，以及只在 DSH 内生效的火箭鼠标指针。
+
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+![Orbit 深色主题预览](docs/preview-dark.png)
+
+> 预览使用独立演示布局展示真实主题效果，不是 DSH 官方界面的截图，不包含私人会话。
+
+## 有什么效果
+
+- **星空**：按窗口尺寸生成、不重复平铺的星点，文字阅读区域降低亮度。
+- **月球**：使用 NASA LRO / LROC / LOLA 数据制作月海与环形山细节，位于内容下方。
+- **宇航员**：左下角单个大宇航员，双手高于肩膀，后仰展开四肢，并轻微漂浮。
+- **流星**：15 个独立计时器，各自随机等待 **1–10 秒**，划过后重新随机计时；同屏活跃流星始终在 **0–15** 颗之间。
+- **鼠标光晕**：柔和的蓝白光随鼠标移动，离开页面后淡出。
+- **主题指针**：普通区域显示火箭，文字和输入区域显示蓝白 I 形指针；保留调整大小等特殊指针。
+- **明暗模式**：跟随 DSH 的浅色 / 深色模式。
+
+背景装饰不接收点击，文字、分界线和控件位于月球、宇航员与流星之上。窗口隐藏时暂停流星；系统偏好“减少动态效果”时停用流星与宇航员漂浮。窄窗口或高度不足时隐藏宇航员。
+
+## 安装
+
+本机验证环境为 **Windows 11 / DSH Desktop 0.2.1-rc.2**。其他版本和平台尚未逐一验证。
+
+仓库包含已构建的 `lib/`，使用主题不需要 Python，也没有运行时 npm 依赖。
+
+### 从 GitHub 安装
+
+先确保 `dsh` 命令可用，再执行：
+
+```sh
+dsh plugin --profile desktop add github:ZcNCn39/dsh-theme-orbit
+```
+
+**完全退出并重新打开 DSH。** 关闭窗口后仍驻留托盘的情况下，需要从托盘退出。
+
+包内的 `dsh.bundle` 和 `cordis.patch.yml` 会注册主题，无需手动覆盖 DSH 的安装文件。希望固定版本时，可把来源写成 `github:ZcNCn39/dsh-theme-orbit#<commit>`。
+
+如果 Windows 找不到 `dsh`，可以使用桌面安装目录中的 CLI：
+
+```powershell
+& "<DSH安装目录>\resources\runtime\cli\bin\dsh.cmd" plugin --profile desktop add github:ZcNCn39/dsh-theme-orbit
+```
+
+`<DSH安装目录>` 是占位符，请替换为自己的实际目录。Web profile 可把 `desktop` 换成已有的 `web` profile；只支持有 Web UI 的环境，终端界面没有视觉效果。
+
+### 从本地目录安装
+
+```sh
+git clone https://github.com/ZcNCn39/dsh-theme-orbit.git
+cd dsh-theme-orbit
+dsh plugin --profile desktop add .
+```
+
+更新主题后重新安装本地目录或更新 GitHub 依赖，并重启 DSH；部分安装方式会复制文件，不会实时读取检出目录。
+
+### 卸载
+
+```sh
+dsh plugin --profile desktop remove dsh-theme-orbit
+```
+
+完全退出并重新打开 DSH。主题不会修改 Windows 系统鼠标方案。
+
+## 范围与已知限制
+
+- 火箭和 I 形鼠标样式仅限 DSH 的网页内容区域。
+- Windows 版的“应用 / 编辑”按钮使用独立的 Shadow DOM，本主题已为这两个按钮补充指针样式。
+- 窗口最外侧边缘、原生标题栏拖动区域、系统窗口按钮及弹出的原生菜单，仍可能使用系统指针；网页主题不能覆盖这些原生区域。
+- 月相是装饰用的固定光照效果，不代表当天真实月相。
+- 配色使用 DSH 的主题 token API；Windows 控制栏适配依赖当前的 `data-windows-menu` 容器，宿主升级后可能需要调整。
+- 如果此前手动安装过同名主题，请避免在 profile 的 `cordis.patch.yml` 中再次插入同一个 `theme-orbit` 条目。
+
+## 修改与构建
+
+源码入口为 `tools/client.template.js`，不要只修改生成文件 `lib/client.js`。配色在 `tools/tokens.json`。
+
+```sh
+python -m pip install -r requirements-build.txt
+python tools/build.py
+node --check lib/client.js
+```
+
+构建会把月面和宇航员像素、光标 SVG 一起打包进客户端文件。运行时不需要访问图片服务器。
+
+常用调整位置：
+
+| 内容 | 文件 / 位置 |
+| --- | --- |
+| 明暗配色与背景透明度 | `tools/tokens.json` |
+| 月球大小、位置、亮度 | 模板中的 `MOON_ID` 样式 |
+| 宇航员大小与漂浮动画 | 模板中的 `ASTRONAUT_ID` 样式 |
+| 流星等待与数量 | `scheduleMeteor()`、`initMeteors()` |
+| 指针 | `assets/rocket-cursor.svg`、`assets/text-cursor.svg` |
+| 月球渲染 | `tools/build.py` |
+
+查看可交互的独立演示页面：
+
+```sh
+node tools/preview.mjs
+```
+
+在浏览器打开生成的 `docs/preview.html`，可以体验鼠标样式、光晕与流星，并切换明暗模式。
+
+## 项目结构
+
+```text
+assets/              月球数据、生成的宇航员、光标 SVG、素材说明与提示词
+docs/                公开演示预览
+lib/client.js        已构建的浏览器主题插件
+lib/index.js         空的宿主入口
+tools/               主题源码、配色与构建工具
+cordis.patch.yml     DSH bundle 注册入口
+```
+
+欢迎通过 [Issues](https://github.com/ZcNCn39/dsh-theme-orbit/issues) 反馈宿主版本、平台和复现步骤，也欢迎提交改进。
+
+## 许可证与素材
+
+项目原创代码与光标采用 [MIT License](LICENSE)。月球数据来自 **NASA's Scientific Visualization Studio**，保留独立的来源说明与使用条款。宇航员是 AI 生成的装饰素材，生成提示词随仓库提供。完整说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [assets/CREDITS.md](assets/CREDITS.md)。
+
+这是独立社区主题，与 DeepSeek、NASA 均无隶属或背书关系。

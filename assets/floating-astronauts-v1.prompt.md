@@ -1,0 +1,8 @@
+# Floating astronauts v1
+
+Tool: built-in `image_gen.imagegen`.
+Transparency: `transparent_background: true`.
+
+Final prompt:
+
+Create ONE transparent-background photorealistic bitmap asset for a desktop deep-space theme, landscape composition 3:2. Exactly THREE small full-body astronauts freely floating in zero gravity, one prominent astronaut centered toward the left and two smaller, more distant astronauts at the upper right and lower right, with ample transparent gaps separating each complete silhouette. All three have realistically detailed white EVA suits, dark reflective gold-black helmet visors, life-support backpacks, gloves and boots. Each astronaut's torso is yawed approximately 30 degrees to their own left, reclining backwards approximately 60 degrees away from an upright stance, arms freely spread apart to the sides and both legs separated with slightly bent knees, an unmistakably relaxed floating pose rather than standing, jumping, or walking. Perspective foreshortening and a sideways semi-reclining diagonal body line should make the backward tilt readable. Soft neutral sunlight from upper left, restrained cool shadow fill, realistic fabric folds and equipment. Clear readable silhouettes at small UI sizes; largest astronaut about twice the height of the smallest. Full helmets, both hands and both boots must be in frame. No scenery, no stars, no moon, no planets, no ground, no tether, no jets, no text, no logos, no glow, no drop shadow, no frame, no checkerboard baked into pixels. Actual alpha transparency around and between the astronauts. This is an isolated decorative astronaut group asset, not an app mockup.
