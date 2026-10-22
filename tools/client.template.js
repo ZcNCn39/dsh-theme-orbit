@@ -10,12 +10,14 @@ window.__ModuleLoader__.load({
     var ASTRONAUT_ID = SOURCE + "-astronauts";
     var METEOR_ID = SOURCE + "-meteors";
     var EXHAUST_ID = SOURCE + "-exhaust";
+    var FLIGHT_ID = SOURCE + "-rocket-flight";
     var SPARKS_ID = SOURCE + "-sparks";
     var CURSOR_ATTRIBUTE = "data-orbit-rocket-cursor";
     // Keep the native cursor <=32 DIP: Chromium drops larger images when
     // they cross viewport edges (including the right-hand conversation rail).
     // The 32px SVG scales its 36-unit drawing; the nose hotspot is now (6,6).
-    var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_ROCKET_SVG__) + '") 6 6, auto';
+    var ROCKET_SVG = __ORBIT_ROCKET_SVG__;
+    var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(ROCKET_SVG) + '") 6 6, auto';
     var TEXT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_TEXT_CURSOR_SVG__) + '") 16 16, text';
     var RESIZE_SVGS = __ORBIT_RESIZE_SVGS__;
     var RESIZE_AXES = {
@@ -121,6 +123,7 @@ window.__ModuleLoader__.load({
     var CSS = [
       "body[" + CURSOR_ATTRIBUTE + "=rocket], body[" + CURSOR_ATTRIBUTE + "=rocket] * { cursor:" + ROCKET_CURSOR + " !important; }",
       "body[" + CURSOR_ATTRIBUTE + "=text], body[" + CURSOR_ATTRIBUTE + "=text] * { cursor:" + TEXT_CURSOR + " !important; }",
+      "body[data-orbit-boosting][" + CURSOR_ATTRIBUTE + "=rocket], body[data-orbit-boosting][" + CURSOR_ATTRIBUTE + "=rocket] * { cursor:none !important; }",
       "body { isolation:isolate; background-color: #04060d !important;",
       " background-image: radial-gradient(ellipse at 78% 10%, rgba(56,69,100,.12), transparent 56%) !important;",
       " background-repeat: no-repeat !important; background-attachment: fixed !important; }",
@@ -177,7 +180,10 @@ window.__ModuleLoader__.load({
       "#" + GLOW_ID + " { background-position:center; background-repeat:no-repeat; }",
       "#" + GLOW_ID + "[data-context=reading] { background-size:65% 65%; }",
       "#" + GLOW_ID + "[data-context=input] { background-size:45% 45%; }",
-      "#" + EXHAUST_ID + " { position:fixed; left:0; top:0; width:0; height:0; z-index:2147483647; pointer-events:none; opacity:0; transition:opacity 70ms linear; }",
+      "#" + FLIGHT_ID + " { position:fixed; left:0; top:0; width:32px; height:32px; z-index:2147483647; pointer-events:none !important; visibility:hidden; will-change:transform; }",
+      "#" + FLIGHT_ID + "[data-active=true] { visibility:visible; }",
+      "#" + FLIGHT_ID + " > svg { position:absolute; inset:0; width:32px; height:32px; overflow:visible; pointer-events:none !important; }",
+      "#" + EXHAUST_ID + " { position:absolute; left:21px; top:21px; width:0; height:0; pointer-events:none; opacity:0; transform:rotate(-45deg); }",
       "#" + EXHAUST_ID + "[data-active=true] { opacity:1; }",
       "#" + EXHAUST_ID + " > span { position:absolute; top:-1px; transform-origin:50% 0; clip-path:polygon(16% 0,84% 0,100% 25%,65% 76%,50% 100%,35% 76%,0 25%); }",
       "#" + EXHAUST_ID + " > span:first-child { left:-7px; width:14px; height:34px; background:linear-gradient(#c5edff,#6dcfff 22%,#ffc36e 55%,rgba(255,123,48,0)); filter:drop-shadow(0 0 3px rgba(112,204,255,.6)); }",
@@ -229,6 +235,14 @@ window.__ModuleLoader__.load({
       exhaust.setAttribute("data-active", "false");
       exhaust.appendChild(document.createElement("span"));
       exhaust.appendChild(document.createElement("span"));
+      var flight = document.createElement("div");
+      flight.id = FLIGHT_ID;
+      flight.setAttribute("aria-hidden", "true");
+      flight.setAttribute("data-active", "false");
+      // Trusted, bundled SVG, shared with the native idle cursor. Inline SVG
+      // also works when the host CSP disallows data: image elements.
+      flight.innerHTML = ROCKET_SVG;
+      flight.appendChild(exhaust);
       var sparks = document.createElement("div");
       sparks.id = SPARKS_ID;
       sparks.setAttribute("aria-hidden", "true");
@@ -260,8 +274,10 @@ window.__ModuleLoader__.load({
         var root = target && typeof target.getRootNode === "function" ? target.getRootNode() : null;
         return !!(root && root.host && root.host.hasAttribute("data-windows-menu"));
       }
-      function positionExhaust() {
-        exhaust.style.transform = "translate3d(" + (pointerX + 15) + "px," + (pointerY + 15) + "px,0) rotate(-45deg)";
+      function positionFlight() {
+        // One composited parent moves the rocket AND nozzle together; an OS
+        // cursor plus a separately rendered flame can never stay frame-locked.
+        flight.style.transform = "translate3d(" + (pointerX - 6) + "px," + (pointerY - 6) + "px,0)";
       }
       function emitSpark() {
         if (!boosting || disposed) return;
@@ -288,6 +304,8 @@ window.__ModuleLoader__.load({
         if (boostTimer !== null) window.clearTimeout(boostTimer);
         boostTimer = null;
         exhaust.setAttribute("data-active", "false");
+        flight.setAttribute("data-active", "false");
+        if (document.body) document.body.removeAttribute("data-orbit-boosting");
       }
       function startBoost(event) {
         if (disposed || event.button !== 0 || event.pointerType === "touch") return;
@@ -295,10 +313,12 @@ window.__ModuleLoader__.load({
         if (document.body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket" && !inMenu(realTarget(event))) return;
         pointerX = event.clientX;
         pointerY = event.clientY;
-        positionExhaust();
+        positionFlight();
         if (boosting) return;
         boosting = true;
+        flight.setAttribute("data-active", "true");
         exhaust.setAttribute("data-active", "true");
+        document.body.setAttribute("data-orbit-boosting", "");
         emitSpark();
       }
       function endBoost(event) {
@@ -351,6 +371,7 @@ window.__ModuleLoader__.load({
           var sheet = document.createElement("style");
           sheet.id = STYLE_ID + "-menubar";
           sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
+          sheet.textContent += ":host-context(body[data-orbit-boosting][data-orbit-rocket-cursor=rocket]), :host-context(body[data-orbit-boosting][data-orbit-rocket-cursor=rocket]) * { cursor:none !important; }";
           root.appendChild(sheet);
           menuSheets.push(sheet);
         });
@@ -519,12 +540,14 @@ window.__ModuleLoader__.load({
         pointerEvent = event;
         pointerX = event.clientX;
         pointerY = event.clientY;
+        // No extra rAF wait for the active cursor. The soft ambient glow can
+        // remain coalesced; the visible rocket and flame share this transform.
+        if (boosting) positionFlight();
         if (glowFrame) return;
         glowFrame = window.requestAnimationFrame(function () {
           glowFrame = 0;
           if (disposed) return;
           updateThemedCursor(pointerEvent);
-          if (boosting) positionExhaust();
           glow.style.transform = "translate3d(" + (pointerX - 160) + "px," + (pointerY - 160) + "px,0)";
           var context = glow.getAttribute("data-context");
           glow.style.opacity = context === "input" ? "0.28" : context === "reading" ? "0.46" : "1";
@@ -566,7 +589,7 @@ window.__ModuleLoader__.load({
         if (body && !meteors.parentNode) body.appendChild(meteors);
         if (body && !glow.parentNode) body.appendChild(glow);
         if (body && !sparks.parentNode) body.appendChild(sparks);
-        if (body && !exhaust.parentNode) body.appendChild(exhaust);
+        if (body && !flight.parentNode) body.appendChild(flight);
         try { renderMoon(moon); } catch (_) {}
         renderAstronauts(astronauts).catch(function () { /* Decorative only. */ });
         paint();
@@ -634,6 +657,7 @@ window.__ModuleLoader__.load({
         if (meteors.parentNode) meteors.parentNode.removeChild(meteors);
         if (glow.parentNode) glow.parentNode.removeChild(glow);
         if (exhaust.parentNode) exhaust.parentNode.removeChild(exhaust);
+        if (flight.parentNode) flight.parentNode.removeChild(flight);
         if (sparks.parentNode) sparks.parentNode.removeChild(sparks);
       };
     }
