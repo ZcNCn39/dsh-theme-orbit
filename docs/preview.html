@@ -68,7 +68,7 @@ function createOrbitSoundscape() {
     if (saved && typeof saved.volume === "number" && Number.isFinite(saved.volume)) prefs.volume = Math.max(0, Math.min(1, saved.volume));
   } catch (_) { /* Storage may be unavailable in embedded browsers. */ }
   var Context = window.AudioContext || window.webkitAudioContext;
-  var ctx = null, master = null, noise = null, engine = null, opening = null;
+  var ctx = null, master = null, noise = null, fireNoise = null, engine = null, opening = null;
   var wanted = false, disposed = false, lastClick = -Infinity, lastMeteor = -Infinity;
   var voices = new Set();
   function allowed() { return !disposed && !prefs.muted && prefs.volume > 0 && !document.hidden; }
@@ -94,6 +94,24 @@ function createOrbitSoundscape() {
     } catch (_) { return Promise.resolve(false); }
   }
   function ready() { return allowed() && ctx && ctx.state === "running" && voices.size < 6; }
+  function solarMode() { return !!document.body && !document.body.hasAttribute("data-ds-dark-theme"); }
+  function burningNoise() {
+    if (fireNoise) return fireNoise;
+    // Cache a soft rushing bed with short, irregular ember crackles. This is
+    // built only on the first solar sound, never during pointer movement.
+    fireNoise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    var output = fireNoise.getChannelData(0), input = noise.getChannelData(0);
+    for (var i = 0; i < output.length; i++) output[i] = input[i] * 0.48;
+    [0.07, 0.19, 0.34, 0.48, 0.63, 0.82, 0.94].forEach(function (time, index) {
+      var start = Math.floor(time * ctx.sampleRate);
+      var length = Math.floor((0.007 + (index % 3) * 0.004) * ctx.sampleRate);
+      for (var j = 0; j < length && start + j < output.length; j++) {
+        var envelope = Math.exp(-j / (length * 0.21));
+        output[start + j] += input[start + j] * envelope * 0.48;
+      }
+    });
+    return fireNoise;
+  }
   function voice() {
     var sources = [], nodes = [], cleaned = false;
     var bus = ctx.createGain(); nodes.push(bus); bus.connect(master);
@@ -127,15 +145,17 @@ function createOrbitSoundscape() {
       try {
         var item = voice(); engine = item;
         var now = ctx.currentTime;
+        var solar = solarMode();
         item.bus.gain.setValueAtTime(0, now);
-        item.bus.gain.linearRampToValueAtTime(1, now + 0.09);
-        var source = item.add(ctx.createBufferSource()); source.buffer = noise; source.loop = true;
-        var filter = item.node(ctx.createBiquadFilter()); filter.type = "lowpass"; filter.frequency.value = 780; filter.Q.value = 0.65;
-        var air = item.node(ctx.createGain()); air.gain.value = 0.22;
+        item.bus.gain.linearRampToValueAtTime(1, now + (solar ? 0.11 : 0.09));
+        var source = item.add(ctx.createBufferSource()); source.buffer = solar ? burningNoise() : noise; source.loop = true;
+        var filter = item.node(ctx.createBiquadFilter()); filter.type = "lowpass"; filter.frequency.value = 780; filter.Q.value = solar ? 0.55 : 0.65;
+        if (solar) { filter.frequency.setValueAtTime(1050, now); filter.frequency.linearRampToValueAtTime(760, now + 0.45); }
+        var air = item.node(ctx.createGain()); air.gain.value = solar ? 0.29 : 0.22;
         source.connect(filter); filter.connect(air); air.connect(item.bus);
-        var oscillator = item.add(ctx.createOscillator()); oscillator.type = "sine";
-        oscillator.frequency.setValueAtTime(54, now); oscillator.frequency.linearRampToValueAtTime(71, now + 0.3);
-        var hum = item.node(ctx.createGain()); hum.gain.value = 0.075;
+        var oscillator = item.add(ctx.createOscillator()); oscillator.type = solar ? "triangle" : "sine";
+        oscillator.frequency.setValueAtTime(solar ? 82 : 54, now); oscillator.frequency.linearRampToValueAtTime(solar ? 64 : 71, now + 0.3);
+        var hum = item.node(ctx.createGain()); hum.gain.value = solar ? 0.045 : 0.075;
         oscillator.connect(hum); hum.connect(item.bus);
         source.onended = item.finish;
         source.start(); oscillator.start();
@@ -148,13 +168,13 @@ function createOrbitSoundscape() {
     lastClick = ctx.currentTime;
     var item = null;
     try {
-      item = voice(); var now = ctx.currentTime;
+      item = voice(); var now = ctx.currentTime, solar = solarMode();
       item.bus.gain.setValueAtTime(0, now);
-      item.bus.gain.linearRampToValueAtTime(0.13, now + 0.012);
-      item.bus.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
-      var first = item.add(ctx.createOscillator()); first.type = "sine";
-      first.frequency.setValueAtTime(660, now); first.frequency.exponentialRampToValueAtTime(880, now + 0.1);
-      first.connect(item.bus); first.onended = item.finish; first.start(now); first.stop(now + 0.18);
+      item.bus.gain.linearRampToValueAtTime(solar ? 0.09 : 0.13, now + 0.012);
+      item.bus.gain.exponentialRampToValueAtTime(0.0001, now + (solar ? 0.13 : 0.16));
+      var first = item.add(ctx.createOscillator()); first.type = solar ? "triangle" : "sine";
+      first.frequency.setValueAtTime(solar ? 540 : 660, now); first.frequency.exponentialRampToValueAtTime(solar ? 405 : 880, now + 0.1);
+      first.connect(item.bus); first.onended = item.finish; first.start(now); first.stop(now + (solar ? 0.15 : 0.18));
     } catch (_) { if (item) item.finish(); }
   }
   function meteor() {
@@ -163,19 +183,25 @@ function createOrbitSoundscape() {
     lastMeteor = ctx.currentTime;
     var item = null;
     try {
-      item = voice(); var now = ctx.currentTime;
+      item = voice(); var now = ctx.currentTime, solar = solarMode();
       item.bus.gain.setValueAtTime(0, now);
-      item.bus.gain.linearRampToValueAtTime(0.1, now + 0.16);
-      item.bus.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
-      var source = item.add(ctx.createBufferSource()); source.buffer = noise;
-      var filter = item.node(ctx.createBiquadFilter()); filter.type = "bandpass"; filter.Q.value = 0.8;
-      filter.frequency.setValueAtTime(1900, now); filter.frequency.exponentialRampToValueAtTime(470, now + 0.7);
+      item.bus.gain.linearRampToValueAtTime(solar ? 0.13 : 0.1, now + (solar ? 0.12 : 0.16));
+      item.bus.gain.exponentialRampToValueAtTime(0.0001, now + (solar ? 0.84 : 0.72));
+      var source = item.add(ctx.createBufferSource()); source.buffer = solar ? burningNoise() : noise;
+      var filter = item.node(ctx.createBiquadFilter()); filter.type = solar ? "lowpass" : "bandpass"; filter.Q.value = solar ? 0.65 : 0.8;
+      filter.frequency.setValueAtTime(solar ? 1600 : 1900, now); filter.frequency.exponentialRampToValueAtTime(solar ? 260 : 470, now + (solar ? 0.82 : 0.7));
       source.connect(filter);
       if (typeof ctx.createStereoPanner === "function") {
-        var pan = item.node(ctx.createStereoPanner()); pan.pan.setValueAtTime(-0.45, now); pan.pan.linearRampToValueAtTime(0.45, now + 0.7);
+        var pan = item.node(ctx.createStereoPanner()); pan.pan.setValueAtTime(-0.45, now); pan.pan.linearRampToValueAtTime(0.45, now + (solar ? 0.82 : 0.7));
         filter.connect(pan); pan.connect(item.bus);
       } else filter.connect(item.bus);
-      source.onended = item.finish; source.start(now); source.stop(now + 0.75);
+      if (solar) {
+        var ember = item.add(ctx.createOscillator()); ember.type = "sine";
+        ember.frequency.setValueAtTime(145, now); ember.frequency.exponentialRampToValueAtTime(62, now + 0.75);
+        var bass = item.node(ctx.createGain()); bass.gain.value = 0.22;
+        ember.connect(bass); bass.connect(item.bus); ember.start(now); ember.stop(now + 0.88);
+      }
+      source.onended = item.finish; source.start(now); source.stop(now + (solar ? 0.89 : 0.75));
     } catch (_) { if (item) item.finish(); }
   }
   function silence() {
@@ -196,7 +222,7 @@ function createOrbitSoundscape() {
     dispose:function () {
       if (disposed) return; disposed = true; silence();
       if (ctx && ctx.state !== "closed") ctx.close().catch(function () {});
-      noise = null;
+      noise = null; fireNoise = null;
     }
   };
 }

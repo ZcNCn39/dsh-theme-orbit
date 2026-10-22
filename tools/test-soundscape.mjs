@@ -19,12 +19,15 @@ try {
   await cdp('Runtime.enable');await cdp('Page.enable');
   await cdp('Emulation.setDeviceMetricsOverride',{width:1536,height:816,deviceScaleFactor:1,mobile:false});
   await cdp('Page.addScriptToEvaluateOnNewDocument',{source:`
-    window.audioContexts=[];window.audioSources=[];window.audioGains=[];
+    window.audioContexts=[];window.audioSources=[];window.audioGains=[];window.audioFilters=[];window.audioBuffers=[];
+    const trace=param=>{const events=[];for(const method of ['setValueAtTime','linearRampToValueAtTime','exponentialRampToValueAtTime']){const native=param[method].bind(param);param[method]=(...args)=>{events.push([method,args[0]]);return native(...args);};}return events;};
     const Native=window.AudioContext;
     window.AudioContext=class extends Native {
       constructor(...args){super(...args);audioContexts.push(this);}
       createGain(){const node=super.createGain();audioGains.push(node);return node;}
-      createOscillator(){return this.track(super.createOscillator());}
+      createOscillator(){const node=super.createOscillator();node.frequencyEvents=trace(node.frequency);return this.track(node);}
+      createBiquadFilter(){const node=super.createBiquadFilter();node.frequencyEvents=trace(node.frequency);audioFilters.push(node);return node;}
+      createBuffer(...args){const buffer=super.createBuffer(...args);audioBuffers.push(buffer);return buffer;}
       createBufferSource(){return this.track(super.createBufferSource());}
       track(node){const record={node,started:false,stopped:false};audioSources.push(record);const start=node.start.bind(node),stop=node.stop.bind(node);node.start=(...args)=>{record.started=true;return start(...args);};node.stop=(...args)=>{record.stopped=true;return stop(...args);};return node;}
     };`});
@@ -95,10 +98,37 @@ try {
   await run('finishResume()');await delay(40);assert.equal(await sources(),late,'A released click cannot start audio after a late resume');
   await run('engineTest.dispose()');await delay(35);
   assert.equal(await run('audioContexts.every(c=>c.state==="closed")'),true);
+  // Both palettes use real Web Audio nodes. The dark values below are the
+  // original 0.3.0 sound parameters, including the unchanged noise buffer.
+  for(const solar of [true,false]){
+    await run(`document.body.toggleAttribute('data-ds-dark-theme',${!solar});window.paletteEngine=createOrbitSoundscape();window.paletteBufferStart=audioBuffers.length;`);
+    assert.equal(await run('paletteEngine.unlock()'),true);
+    await run('window.paletteStart=audioSources.length;paletteEngine.startThrust()');await delay(35);
+    const thrust=await run(`({count:audioSources.length-paletteStart,type:audioSources[paletteStart+1].node.type,frequency:audioSources[paletteStart+1].node.frequencyEvents,filter:audioFilters[audioFilters.length-1].type,cutoff:audioFilters[audioFilters.length-1].frequency.value,originalNoise:audioSources[paletteStart].node.buffer===audioBuffers[paletteBufferStart],buffers:audioBuffers.length-paletteBufferStart})`);
+    assert.equal(thrust.count,2);assert.equal(thrust.type,solar?'triangle':'sine');
+    assert.deepEqual(thrust.frequency,[['setValueAtTime',solar?82:54],['linearRampToValueAtTime',solar?64:71]]);
+    assert.equal(thrust.filter,'lowpass');assert.equal(thrust.originalNoise,!solar);assert.equal(thrust.buffers,solar?2:1);
+    if(!solar)assert.equal(thrust.cutoff,780);
+    await run('paletteEngine.stopThrust()');await delay(130);
+    if(solar){
+      await run('document.body.setAttribute("data-ds-dark-theme","");window.paletteStart=audioSources.length;paletteEngine.startThrust()');await delay(30);
+      assert.deepEqual(await run('audioSources[paletteStart+1].node.frequencyEvents'),[['setValueAtTime',54],['linearRampToValueAtTime',71]]);
+      await run('paletteEngine.stopThrust();document.body.removeAttribute("data-ds-dark-theme")');await delay(130);
+    }
+    await run('window.paletteStart=audioSources.length;paletteEngine.click()');
+    assert.deepEqual(await run('audioSources[paletteStart].node.frequencyEvents'),[['setValueAtTime',solar?540:660],['exponentialRampToValueAtTime',solar?405:880]]);
+    await run('window.paletteStart=audioSources.length;paletteEngine.meteor()');
+    const meteor=await run(`({count:audioSources.length-paletteStart,type:audioFilters[audioFilters.length-1].type,frequency:audioFilters[audioFilters.length-1].frequencyEvents})`);
+    assert.equal(meteor.count,solar?2:1);assert.equal(meteor.type,solar?'lowpass':'bandpass');
+    assert.deepEqual(meteor.frequency,[['setValueAtTime',solar?1600:1900],['exponentialRampToValueAtTime',solar?260:470]]);
+    await run('paletteEngine.dispose()');await delay(35);
+  }
+  assert.equal(await run('audioSources.every(s=>s.stopped)'),true);
+  assert.equal(await run('audioContexts.every(c=>c.state==="closed")'),true);
   await run('window.AudioContext=undefined;window.webkitAudioContext=undefined;Object.defineProperty(window,"localStorage",{configurable:true,get(){throw new Error("Storage unavailable")}});window.unsupported=createOrbitSoundscape();unsupported.startThrust();unsupported.setMuted(true);unsupported.setVolume(0.5);unsupported.dispose()');
   assert.equal(await run('unsupported.settings().supported'),false);
   assert.deepEqual(errors,[]);
-  console.log('PASS: real Web Audio, quiet thrust, no per-move audio work, silent typing, UI/meteor cooldowns, mute/volume persistence, late resume, blur, disposal, unavailable audio/storage. RMS:',rms);
+  console.log('PASS: original dark audio parameters/noise; solar fire/ember/meteor palettes; live palette switching; real audio, silent typing, cooldowns, mute/volume persistence, late resume, blur, disposal and unavailable audio/storage. RMS:',rms);
 } finally {
   await cdp('Page.close');socket.close();
 }
