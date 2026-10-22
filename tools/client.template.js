@@ -12,8 +12,10 @@ window.__ModuleLoader__.load({
     var EXHAUST_ID = SOURCE + "-exhaust";
     var SPARKS_ID = SOURCE + "-sparks";
     var CURSOR_ATTRIBUTE = "data-orbit-rocket-cursor";
-    // Native page-local cursor: the rocket nose is the actual click hotspot.
-    var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_ROCKET_SVG__) + '") 7 7, auto';
+    // Keep the native cursor <=32 DIP: Chromium drops larger images when
+    // they cross viewport edges (including the right-hand conversation rail).
+    // The 32px SVG scales its 36-unit drawing; the nose hotspot is now (6,6).
+    var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_ROCKET_SVG__) + '") 6 6, auto';
     var TEXT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_TEXT_CURSOR_SVG__) + '") 16 16, text';
     var TOKENS = __ORBIT_TOKENS__;
 
@@ -247,14 +249,14 @@ window.__ModuleLoader__.load({
         return !!(root && root.host && root.host.hasAttribute("data-windows-menu"));
       }
       function positionExhaust() {
-        exhaust.style.transform = "translate3d(" + (pointerX + 16.7) + "px," + (pointerY + 16.7) + "px,0) rotate(-45deg)";
+        exhaust.style.transform = "translate3d(" + (pointerX + 15) + "px," + (pointerY + 15) + "px,0) rotate(-45deg)";
       }
       function emitSpark() {
         if (!boosting || disposed) return;
         if (!(motionQuery && motionQuery.matches) && sparkNodes.size < 14) {
           var node = document.createElement("span");
-          node.style.left = (pointerX + 17) + "px";
-          node.style.top = (pointerY + 17) + "px";
+          node.style.left = (pointerX + 15) + "px";
+          node.style.top = (pointerY + 15) + "px";
           sparks.appendChild(node);
           if (typeof node.animate === "function") {
             sparkNodes.add(node);

@@ -26,11 +26,11 @@ assert.equal(await active(),'true');
 const particles=await run('document.querySelectorAll("#dsh-theme-orbit-sparks > span").length');assert.ok(particles>0&&particles<=14);
 assert.equal(await run('document.getElementById("dsh-theme-orbit-exhaust").getAnimations({subtree:true}).length'),2);
 await mouse('mouseMoved',1100,420,{buttons:1});await delay(25);
-assert.match(await run('document.getElementById("dsh-theme-orbit-exhaust").style.transform'),/1116\.7px, 436\.7px/);
+assert.match(await run('document.getElementById("dsh-theme-orbit-exhaust").style.transform'),/1115px, 435px/);
 // Browser screenshots omit the OS cursor; draw its same SVG at the same hotspot
 // only for the visual QA artifact, not in the shipped runtime.
 await run(`window.cursorMarker=document.createElement('img');cursorMarker.src=getComputedStyle(document.body).cursor.match(/^url\\("([^\"]+)"\\)/)[1];
-  cursorMarker.style.cssText='position:fixed;left:1093px;top:413px;width:36px;height:36px;z-index:2147483647;pointer-events:none';document.body.appendChild(cursorMarker);cursorMarker.decode();`);
+  cursorMarker.style.cssText='position:fixed;left:1094px;top:414px;width:32px;height:32px;z-index:2147483647;pointer-events:none';document.body.appendChild(cursorMarker);cursorMarker.decode();`);
 fs.mkdirSync(root+'/.test-output',{recursive:true});
 fs.writeFileSync(root+'/.test-output/rocket-boost.png',Buffer.from((await cdp('Page.captureScreenshot',{format:'png',clip:{x:1068,y:395,width:118,height:118,scale:2}})).data,'base64'));
 await run('cursorMarker.remove()');

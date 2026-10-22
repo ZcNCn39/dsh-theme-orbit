@@ -38,8 +38,10 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
     var EXHAUST_ID = SOURCE + "-exhaust";
     var SPARKS_ID = SOURCE + "-sparks";
     var CURSOR_ATTRIBUTE = "data-orbit-rocket-cursor";
-    // Native page-local cursor: the rocket nose is the actual click hotspot.
-    var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"36\" height=\"36\" viewBox=\"0 0 36 36\">\n  <g transform=\"rotate(-45 18 18)\" stroke=\"#18243c\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n    <path d=\"M12 17L7.5 23V28L14 25M24 17L28.5 23V28L22 25\" fill=\"#7498cf\"/>\n    <path d=\"M18 2Q10.5 8 11.5 19L13.5 26H22.5L24.5 19Q25.5 8 18 2Z\" fill=\"#edf4ff\"/>\n    <path d=\"M18 2Q14.8 4.5 13 8H23Q21.2 4.5 18 2Z\" fill=\"#8fb3eb\"/>\n    <path d=\"M21.5 9Q24 17 21 25H22.5L24.5 19Q25 13 23 9Z\" fill=\"#a4b8d6\" stroke=\"none\"/>\n    <circle cx=\"18\" cy=\"14.5\" r=\"3.5\" fill=\"#6cbde9\"/>\n    <path d=\"M16.4 13.5Q17 12.3 18.5 12.4\" fill=\"none\" stroke=\"#e7faff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>\n    <path d=\"M13 23H23\" fill=\"none\"/>\n  </g>\n</svg>\n") + '") 7 7, auto';
+    // Keep the native cursor <=32 DIP: Chromium drops larger images when
+    // they cross viewport edges (including the right-hand conversation rail).
+    // The 32px SVG scales its 36-unit drawing; the nose hotspot is now (6,6).
+    var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 36 36\">\n  <g transform=\"rotate(-45 18 18)\" stroke=\"#18243c\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n    <path d=\"M12 17L7.5 23V28L14 25M24 17L28.5 23V28L22 25\" fill=\"#7498cf\"/>\n    <path d=\"M18 2Q10.5 8 11.5 19L13.5 26H22.5L24.5 19Q25.5 8 18 2Z\" fill=\"#edf4ff\"/>\n    <path d=\"M18 2Q14.8 4.5 13 8H23Q21.2 4.5 18 2Z\" fill=\"#8fb3eb\"/>\n    <path d=\"M21.5 9Q24 17 21 25H22.5L24.5 19Q25 13 23 9Z\" fill=\"#a4b8d6\" stroke=\"none\"/>\n    <circle cx=\"18\" cy=\"14.5\" r=\"3.5\" fill=\"#6cbde9\"/>\n    <path d=\"M16.4 13.5Q17 12.3 18.5 12.4\" fill=\"none\" stroke=\"#e7faff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>\n    <path d=\"M13 23H23\" fill=\"none\"/>\n  </g>\n</svg>\n") + '") 6 6, auto';
     var TEXT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n  <path d=\"M10 5H22M16 5V27M10 27H22\" stroke=\"#77caff\" stroke-width=\"6\" opacity=\".18\"/>\n  <path d=\"M10 5H22M16 5V27M10 27H22\" stroke=\"#12223d\" stroke-width=\"3.8\"/>\n  <path d=\"M10 5H22M16 5V27M10 27H22\" stroke=\"#72c8ff\" stroke-width=\"2.2\"/>\n  <path d=\"M11 5H21M16 6V26M11 27H21\" stroke=\"#e1f5ff\" stroke-width=\".9\"/>\n</svg>\n") + '") 16 16, text';
     var TOKENS = {"--dsw-alias-bg-base": {"light": "rgba(244, 246, 252, 0.55)", "dark": "rgba(8, 12, 26, 0.20)"}, "--dsw-alias-bg-layer-1": {"light": "rgba(255, 255, 255, 0.90)", "dark": "rgba(14, 22, 39, 0.93)"}, "--dsw-alias-bg-layer-2": {"light": "rgba(238, 242, 252, 0.94)", "dark": "rgba(21, 34, 56, 0.92)"}, "--dsw-alias-bg-overlay": {"light": "rgba(255, 255, 255, 0.97)", "dark": "rgba(20, 27, 48, 0.96)"}, "--dsw-specific-sidebar-fill": {"light": "rgba(236, 240, 250, 0.68)", "dark": "rgba(10, 15, 32, 0.24)"}, "--dsw-alias-border-l1": {"light": "rgba(42, 62, 122, 0.10)", "dark": "rgba(147, 182, 230, 0.11)"}, "--dsw-alias-border-l2": {"light": "rgba(42, 62, 122, 0.18)", "dark": "rgba(147, 182, 230, 0.23)"}, "--dsw-alias-label-primary": {"light": "#101A33", "dark": "#E8EEFF"}, "--dsw-alias-label-secondary": {"light": "#56648C", "dark": "#9BAEC8"}, "--dsw-alias-brand-primary": {"light": "#3B5BDB", "dark": "#91B7F5"}, "--dsw-alias-state-error-primary": {"light": "#C43D4E", "dark": "#FF7A8A"}, "--dsw-alias-state-success-primary": {"light": "#12855F", "dark": "#58E0B0"}, "--dsw-alias-state-warn-primary": {"light": "#A86A12", "dark": "#FFC857"}, "--dsw-alias-state-idle-primary": {"light": "#7C88A8", "dark": "#7E8BB5"}};
 
@@ -273,14 +275,14 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         return !!(root && root.host && root.host.hasAttribute("data-windows-menu"));
       }
       function positionExhaust() {
-        exhaust.style.transform = "translate3d(" + (pointerX + 16.7) + "px," + (pointerY + 16.7) + "px,0) rotate(-45deg)";
+        exhaust.style.transform = "translate3d(" + (pointerX + 15) + "px," + (pointerY + 15) + "px,0) rotate(-45deg)";
       }
       function emitSpark() {
         if (!boosting || disposed) return;
         if (!(motionQuery && motionQuery.matches) && sparkNodes.size < 14) {
           var node = document.createElement("span");
-          node.style.left = (pointerX + 17) + "px";
-          node.style.top = (pointerY + 17) + "px";
+          node.style.left = (pointerX + 15) + "px";
+          node.style.top = (pointerY + 15) + "px";
           sparks.appendChild(node);
           if (typeof node.animate === "function") {
             sparkNodes.add(node);

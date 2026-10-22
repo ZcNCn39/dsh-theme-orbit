@@ -117,9 +117,10 @@ node tools/preview.mjs
 
 ```sh
 node tools/test-browser.mjs
+node tools/test-turn-navigation.mjs
 ```
 
-测试使用浏览器真实鼠标与键盘事件，检查喷焰触发与停止、输入功能、侧栏避让、减少动态效果和资源清理。无需额外 npm 依赖；可通过 `ORBIT_CDP_URL` 指定另一个本地 CDP 地址。
+测试使用浏览器真实鼠标与键盘事件，检查喷焰触发与停止、输入功能、侧栏避让、减少动态效果和资源清理，以及右侧会话刻度的悬停预览、点击和滚轮操作。导航检查覆盖 100%、125%、200% 显示缩放，约束原生光标尺寸不超过 32 DIP，避免 Chromium 在页面边缘恢复普通指针。无需额外 npm 依赖；可通过 `ORBIT_CDP_URL` 指定另一个本地 CDP 地址。
 
 ## 项目结构
 
