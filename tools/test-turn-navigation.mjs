@@ -41,7 +41,7 @@ try {
     const dimensions=await run(`(async()=>{const cursor=getComputedStyle(document.elementFromPoint(1587,185)).cursor;const image=new Image();image.src=cursor.match(/^url\\("([^\"]+)"\\)/)[1];await image.decode();return {width:image.naturalWidth,height:image.naturalHeight};})()`);
     console.log('Cursor dimensions at device scale '+scale+':',dimensions);
     await mouse('mousePressed',1587,185,{button:'left',buttons:1,clickCount:1});await delay(50);
-    assert.equal(await run('document.getElementById("dsh-theme-orbit-exhaust").getAttribute("data-active")'),'true');
+    assert.equal(await run('document.body.hasAttribute("data-orbit-boosting")'),true);
     await mouse('mouseReleased',1587,185,{button:'left',clickCount:1});
     assert.equal(await run('window.testClicks'),1);
     assert.match(await run('document.querySelector(".test-preview").textContent'),/^Turn /);

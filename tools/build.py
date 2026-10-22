@@ -69,6 +69,21 @@ template = (ROOT / 'tools/client.template.js').read_text(encoding='utf-8')
 client = template.replace('__ORBIT_TOKENS__', json.dumps(tokens, ensure_ascii=False))
 rocket_svg = (ROOT / 'assets/rocket-cursor.svg').read_text(encoding='utf-8')
 client = client.replace('__ORBIT_ROCKET_SVG__', json.dumps(rocket_svg))
+# Three compact nozzle states fit inside the SAME native 32px cursor canvas.
+# Keeping the rocket geometry/hotspot unchanged avoids a jump on press/release.
+boost_svgs = []
+for length, core in [(12, 8), (16, 11), (14, 9)]:
+    flame = f'''<defs>
+      <linearGradient id="orbit-plume" x1="0" y1="0" x2="0" y2="1">
+        <stop stop-color="#b6edff"/><stop offset=".28" stop-color="#65cfff"/>
+        <stop offset=".65" stop-color="#ffc36e"/><stop offset="1" stop-color="#ff9638" stop-opacity=".1"/>
+      </linearGradient></defs>
+      <g data-orbit-nozzle="{length}" transform="translate(23.65 23.65) rotate(-45)">
+        <path d="M-3.8 -1H3.8L4.5 3L0 {length}L-4.5 3Z" fill="url(#orbit-plume)"/>
+        <path d="M-1.6 -1H1.6L2 2L0 {core}L-2 2Z" fill="#e3faff"/>
+      </g>'''
+    boost_svgs.append(rocket_svg.replace('  <g transform=', flame + '\n  <g transform=', 1))
+client = client.replace('__ORBIT_BOOST_SVGS__', json.dumps(boost_svgs))
 text_svg = (ROOT / 'assets/text-cursor.svg').read_text(encoding='utf-8')
 client = client.replace('__ORBIT_TEXT_CURSOR_SVG__', json.dumps(text_svg))
 resize_svg = (ROOT / 'assets/resize-cursor.svg').read_text(encoding='utf-8')

@@ -9,8 +9,6 @@ window.__ModuleLoader__.load({
     var GLOW_ID = SOURCE + "-cursor-glow";
     var ASTRONAUT_ID = SOURCE + "-astronauts";
     var METEOR_ID = SOURCE + "-meteors";
-    var EXHAUST_ID = SOURCE + "-exhaust";
-    var FLIGHT_ID = SOURCE + "-rocket-flight";
     var SPARKS_ID = SOURCE + "-sparks";
     var CURSOR_ATTRIBUTE = "data-orbit-rocket-cursor";
     // Keep the native cursor <=32 DIP: Chromium drops larger images when
@@ -18,6 +16,9 @@ window.__ModuleLoader__.load({
     // The 32px SVG scales its 36-unit drawing; the nose hotspot is now (6,6).
     var ROCKET_SVG = __ORBIT_ROCKET_SVG__;
     var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(ROCKET_SVG) + '") 6 6, auto';
+    var BOOST_CURSORS = __ORBIT_BOOST_SVGS__.map(function (svg) {
+      return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") 6 6, auto';
+    });
     var TEXT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(__ORBIT_TEXT_CURSOR_SVG__) + '") 16 16, text';
     var RESIZE_SVGS = __ORBIT_RESIZE_SVGS__;
     var RESIZE_AXES = {
@@ -123,7 +124,6 @@ window.__ModuleLoader__.load({
     var CSS = [
       "body[" + CURSOR_ATTRIBUTE + "=rocket], body[" + CURSOR_ATTRIBUTE + "=rocket] * { cursor:" + ROCKET_CURSOR + " !important; }",
       "body[" + CURSOR_ATTRIBUTE + "=text], body[" + CURSOR_ATTRIBUTE + "=text] * { cursor:" + TEXT_CURSOR + " !important; }",
-      "body[data-orbit-boosting][" + CURSOR_ATTRIBUTE + "=rocket], body[data-orbit-boosting][" + CURSOR_ATTRIBUTE + "=rocket] * { cursor:none !important; }",
       "body { isolation:isolate; background-color: #04060d !important;",
       " background-image: radial-gradient(ellipse at 78% 10%, rgba(56,69,100,.12), transparent 56%) !important;",
       " background-repeat: no-repeat !important; background-attachment: fixed !important; }",
@@ -180,20 +180,9 @@ window.__ModuleLoader__.load({
       "#" + GLOW_ID + " { background-position:center; background-repeat:no-repeat; }",
       "#" + GLOW_ID + "[data-context=reading] { background-size:65% 65%; }",
       "#" + GLOW_ID + "[data-context=input] { background-size:45% 45%; }",
-      "#" + FLIGHT_ID + " { position:fixed; left:0; top:0; width:32px; height:32px; z-index:2147483647; pointer-events:none !important; visibility:hidden; will-change:transform; }",
-      "#" + FLIGHT_ID + "[data-active=true] { visibility:visible; }",
-      "#" + FLIGHT_ID + " > svg { position:absolute; inset:0; width:32px; height:32px; overflow:visible; pointer-events:none !important; }",
-      "#" + EXHAUST_ID + " { position:absolute; left:21px; top:21px; width:0; height:0; pointer-events:none; opacity:0; transform:rotate(-45deg); }",
-      "#" + EXHAUST_ID + "[data-active=true] { opacity:1; }",
-      "#" + EXHAUST_ID + " > span { position:absolute; top:-1px; transform-origin:50% 0; clip-path:polygon(16% 0,84% 0,100% 25%,65% 76%,50% 100%,35% 76%,0 25%); }",
-      "#" + EXHAUST_ID + " > span:first-child { left:-7px; width:14px; height:34px; background:linear-gradient(#c5edff,#6dcfff 22%,#ffc36e 55%,rgba(255,123,48,0)); filter:drop-shadow(0 0 3px rgba(112,204,255,.6)); }",
-      "#" + EXHAUST_ID + " > span:last-child { left:-3px; width:6px; height:23px; background:linear-gradient(#fff,#c2f4ff 35%,rgba(255,239,173,.7) 65%,transparent); }",
-      "#" + EXHAUST_ID + "[data-active=true] > span:first-child { animation:orbit-thrust 110ms ease-in-out infinite alternate; }",
-      "#" + EXHAUST_ID + "[data-active=true] > span:last-child { animation:orbit-thrust 75ms ease-in-out infinite alternate-reverse; }",
-      "@keyframes orbit-thrust { from { transform:scale(.85,.7); } to { transform:scale(1.06,1.12); } }",
       "#" + SPARKS_ID + " { position:fixed; inset:0; z-index:2147483647; overflow:hidden; pointer-events:none; }",
       "#" + SPARKS_ID + " > span { position:absolute; width:3px; height:3px; border-radius:50%; corner-shape:round; background:#fbd59c; box-shadow:0 0 4px rgba(146,217,255,.6); }",
-      "@media(prefers-reduced-motion:reduce) { #" + EXHAUST_ID + " > span { animation:none !important; } #" + SPARKS_ID + " { display:none; } body [data-composer-card] { transition:none; } }",
+      "@media(prefers-reduced-motion:reduce) { #" + SPARKS_ID + " { display:none; } body [data-composer-card] { transition:none; } }",
       "@media(prefers-reduced-motion:reduce) { #" + GLOW_ID + " { transition:none; } }",
       "@media(max-width:700px) { #" + MOON_ID + " { width:112px; right:24px; top:72px; opacity:.9; } }",
       "body[data-ds-dark-theme] ::selection { background:rgba(122,162,255,.30); }"
@@ -229,20 +218,6 @@ window.__ModuleLoader__.load({
       var glow = document.createElement("div");
       glow.id = GLOW_ID;
       glow.setAttribute("aria-hidden", "true");
-      var exhaust = document.createElement("div");
-      exhaust.id = EXHAUST_ID;
-      exhaust.setAttribute("aria-hidden", "true");
-      exhaust.setAttribute("data-active", "false");
-      exhaust.appendChild(document.createElement("span"));
-      exhaust.appendChild(document.createElement("span"));
-      var flight = document.createElement("div");
-      flight.id = FLIGHT_ID;
-      flight.setAttribute("aria-hidden", "true");
-      flight.setAttribute("data-active", "false");
-      // Trusted, bundled SVG, shared with the native idle cursor. Inline SVG
-      // also works when the host CSP disallows data: image elements.
-      flight.innerHTML = ROCKET_SVG;
-      flight.appendChild(exhaust);
       var sparks = document.createElement("div");
       sparks.id = SPARKS_ID;
       sparks.setAttribute("aria-hidden", "true");
@@ -262,6 +237,11 @@ window.__ModuleLoader__.load({
       var motionQuery = null;
       var boosting = false;
       var boostTimer = null;
+      var boostFrame = 0;
+      var boostTarget = null;
+      var boostOriginal = "";
+      var boostPriority = "";
+      var boostApplied = "";
       var sparkNodes = new Set();
       var uiObserver = null;
       var layoutFrame = 0;
@@ -274,10 +254,35 @@ window.__ModuleLoader__.load({
         var root = target && typeof target.getRootNode === "function" ? target.getRootNode() : null;
         return !!(root && root.host && root.host.hasAttribute("data-windows-menu"));
       }
-      function positionFlight() {
-        // One composited parent moves the rocket AND nozzle together; an OS
-        // cursor plus a separately rendered flame can never stay frame-locked.
-        flight.style.transform = "translate3d(" + (pointerX - 6) + "px," + (pointerY - 6) + "px,0)";
+      function releaseBoostTarget() {
+        if (!boostTarget) return;
+        // Restore only our own override; never overwrite a host's newer style.
+        if (boostTarget.style.getPropertyValue("cursor") === boostApplied) {
+          if (boostOriginal) boostTarget.style.setProperty("cursor", boostOriginal, boostPriority);
+          else boostTarget.style.removeProperty("cursor");
+        }
+        boostTarget = null;
+      }
+      function applyBoostCursor(target) {
+        if (!target || target.nodeType !== 1 || !target.style) target = document.body;
+        if (boostTarget !== target) {
+          releaseBoostTarget();
+          boostTarget = target;
+          boostOriginal = target.style.getPropertyValue("cursor");
+          boostPriority = target.style.getPropertyPriority("cursor");
+        }
+        // Only the hovered element changes once per flame frame. No global
+        // cursor rule invalidation, layout, or DOM cursor movement is needed.
+        target.style.setProperty("cursor", BOOST_CURSORS[boostFrame], "important");
+        boostApplied = target.style.getPropertyValue("cursor");
+      }
+      function tickBoost() {
+        boostTimer = null;
+        if (!boosting || disposed || (motionQuery && motionQuery.matches)) return;
+        boostFrame = (boostFrame + 1) % BOOST_CURSORS.length;
+        if (boostTarget) applyBoostCursor(boostTarget);
+        if (boostFrame === 0) emitSpark();
+        boostTimer = window.setTimeout(tickBoost, 90);
       }
       function emitSpark() {
         if (!boosting || disposed) return;
@@ -297,14 +302,12 @@ window.__ModuleLoader__.load({
             animation.finished.then(function () { sparkNodes.delete(node); node.remove(); }, function () { sparkNodes.delete(node); node.remove(); });
           } else node.remove();
         }
-        if (!(motionQuery && motionQuery.matches)) boostTimer = window.setTimeout(emitSpark, 65);
       }
       function stopBoost() {
         boosting = false;
         if (boostTimer !== null) window.clearTimeout(boostTimer);
         boostTimer = null;
-        exhaust.setAttribute("data-active", "false");
-        flight.setAttribute("data-active", "false");
+        releaseBoostTarget();
         if (document.body) document.body.removeAttribute("data-orbit-boosting");
       }
       function startBoost(event) {
@@ -313,13 +316,13 @@ window.__ModuleLoader__.load({
         if (document.body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket" && !inMenu(realTarget(event))) return;
         pointerX = event.clientX;
         pointerY = event.clientY;
-        positionFlight();
         if (boosting) return;
         boosting = true;
-        flight.setAttribute("data-active", "true");
-        exhaust.setAttribute("data-active", "true");
+        boostFrame = 0;
+        applyBoostCursor(realTarget(event));
         document.body.setAttribute("data-orbit-boosting", "");
         emitSpark();
+        if (!(motionQuery && motionQuery.matches)) boostTimer = window.setTimeout(tickBoost, 90);
       }
       function endBoost(event) {
         if (!event || event.button === 0 || event.type === "pointercancel") stopBoost();
@@ -371,7 +374,6 @@ window.__ModuleLoader__.load({
           var sheet = document.createElement("style");
           sheet.id = STYLE_ID + "-menubar";
           sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
-          sheet.textContent += ":host-context(body[data-orbit-boosting][data-orbit-rocket-cursor=rocket]), :host-context(body[data-orbit-boosting][data-orbit-rocket-cursor=rocket]) * { cursor:none !important; }";
           root.appendChild(sheet);
           menuSheets.push(sheet);
         });
@@ -506,6 +508,7 @@ window.__ModuleLoader__.load({
         var target = realTarget(event);
         if (!target || target.nodeType !== 1) target = body;
         if (cursorTarget !== target) {
+          releaseBoostTarget();
           cursorTarget = target;
           body.removeAttribute(CURSOR_ATTRIBUTE);
           var original = window.getComputedStyle(target);
@@ -514,21 +517,28 @@ window.__ModuleLoader__.load({
         }
         // Keep resize direction and native drag behavior, with an orbital skin.
         // Disabled, vertical text and other special drag cursors stay native.
+        var mode = null;
         if (inMenu(target)) {
-          body.setAttribute(CURSOR_ATTRIBUTE, "rocket");
+          mode = "rocket";
         } else if (RESIZE_AXES[cursorNative]) {
-          body.setAttribute(CURSOR_ATTRIBUTE, cursorNative);
+          mode = cursorNative;
         } else if (cursorNative === "text") {
-          body.setAttribute(CURSOR_ATTRIBUTE, "text");
+          mode = "text";
         } else if (cursorNative === "auto" || cursorNative === "default" || cursorNative === "pointer") {
           var text = isTextInput(target) || (cursorNative !== "pointer" && cursorSelectable && hitsText(event.clientX, event.clientY));
-          body.setAttribute(CURSOR_ATTRIBUTE, text ? "text" : "rocket");
-        } else {
-          body.removeAttribute(CURSOR_ATTRIBUTE);
+          mode = text ? "text" : "rocket";
         }
-        if (boosting && body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket") stopBoost();
+        // Avoid invalidating body-wide cursor selectors on every display frame.
+        if (body.getAttribute(CURSOR_ATTRIBUTE) !== mode) {
+          if (mode) body.setAttribute(CURSOR_ATTRIBUTE, mode);
+          else body.removeAttribute(CURSOR_ATTRIBUTE);
+        }
+        if (boosting) {
+          if (body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket") stopBoost();
+          else if (boostTarget !== target) applyBoostCursor(target);
+        }
         var context = isTextInput(target) || target.closest("[data-composer-card]") ? "input" : body.getAttribute(CURSOR_ATTRIBUTE) === "text" || target.closest("[data-chat-flow-key]") ? "reading" : "space";
-        glow.setAttribute("data-context", context);
+        if (glow.getAttribute("data-context") !== context) glow.setAttribute("data-context", context);
       }
 
       // Coalesce pointer events into one composited transform per display frame.
@@ -537,12 +547,11 @@ window.__ModuleLoader__.load({
         if (disposed) return;
         if (event.pointerType === "touch") { hideGlow(); return; }
         if (boosting && !(event.buttons & 1)) stopBoost();
-        pointerEvent = event;
+        // composedPath() is cleared after dispatch; preserve shadow-menu hits
+        // before the coalesced update instead of retargeting to their host.
+        pointerEvent = { target:realTarget(event), clientX:event.clientX, clientY:event.clientY };
         pointerX = event.clientX;
         pointerY = event.clientY;
-        // No extra rAF wait for the active cursor. The soft ambient glow can
-        // remain coalesced; the visible rocket and flame share this transform.
-        if (boosting) positionFlight();
         if (glowFrame) return;
         glowFrame = window.requestAnimationFrame(function () {
           glowFrame = 0;
@@ -589,7 +598,6 @@ window.__ModuleLoader__.load({
         if (body && !meteors.parentNode) body.appendChild(meteors);
         if (body && !glow.parentNode) body.appendChild(glow);
         if (body && !sparks.parentNode) body.appendChild(sparks);
-        if (body && !flight.parentNode) body.appendChild(flight);
         try { renderMoon(moon); } catch (_) {}
         renderAstronauts(astronauts).catch(function () { /* Decorative only. */ });
         paint();
@@ -656,8 +664,6 @@ window.__ModuleLoader__.load({
         if (astronauts.parentNode) astronauts.parentNode.removeChild(astronauts);
         if (meteors.parentNode) meteors.parentNode.removeChild(meteors);
         if (glow.parentNode) glow.parentNode.removeChild(glow);
-        if (exhaust.parentNode) exhaust.parentNode.removeChild(exhaust);
-        if (flight.parentNode) flight.parentNode.removeChild(flight);
         if (sparks.parentNode) sparks.parentNode.removeChild(sparks);
       };
     }

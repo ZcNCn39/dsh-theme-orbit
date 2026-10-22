@@ -61,7 +61,7 @@ try {
     await mouse('mouseMoved',895,140,{button:'left',buttons:1});await delay(55);
     assert.equal(await run('document.getElementById("resize-fixture").offsetWidth'),400,JSON.stringify(await run('dragEvents')));
     assert.equal(await run('document.body.getAttribute("data-orbit-rocket-cursor")'),'col-resize');
-    assert.equal(await run('document.getElementById("dsh-theme-orbit-exhaust").getAttribute("data-active")'),'false');
+    assert.equal(await run('document.body.hasAttribute("data-orbit-boosting")'),false);
     await mouse('mouseReleased',895,140,{button:'left',clickCount:1});
     await mouse('mouseMoved',1100,400);await delay(35);assert.equal(await run('document.body.getAttribute("data-orbit-rocket-cursor")'),'rocket');
     // Disabled and move feedback retain their native meaning.

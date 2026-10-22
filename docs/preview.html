@@ -35,8 +35,6 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
     var GLOW_ID = SOURCE + "-cursor-glow";
     var ASTRONAUT_ID = SOURCE + "-astronauts";
     var METEOR_ID = SOURCE + "-meteors";
-    var EXHAUST_ID = SOURCE + "-exhaust";
-    var FLIGHT_ID = SOURCE + "-rocket-flight";
     var SPARKS_ID = SOURCE + "-sparks";
     var CURSOR_ATTRIBUTE = "data-orbit-rocket-cursor";
     // Keep the native cursor <=32 DIP: Chromium drops larger images when
@@ -44,6 +42,9 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
     // The 32px SVG scales its 36-unit drawing; the nose hotspot is now (6,6).
     var ROCKET_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 36 36\">\n  <g transform=\"rotate(-45 18 18)\" stroke=\"#18243c\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n    <path d=\"M12 17L7.5 23V28L14 25M24 17L28.5 23V28L22 25\" fill=\"#7498cf\"/>\n    <path d=\"M18 2Q10.5 8 11.5 19L13.5 26H22.5L24.5 19Q25.5 8 18 2Z\" fill=\"#edf4ff\"/>\n    <path d=\"M18 2Q14.8 4.5 13 8H23Q21.2 4.5 18 2Z\" fill=\"#8fb3eb\"/>\n    <path d=\"M21.5 9Q24 17 21 25H22.5L24.5 19Q25 13 23 9Z\" fill=\"#a4b8d6\" stroke=\"none\"/>\n    <circle cx=\"18\" cy=\"14.5\" r=\"3.5\" fill=\"#6cbde9\"/>\n    <path d=\"M16.4 13.5Q17 12.3 18.5 12.4\" fill=\"none\" stroke=\"#e7faff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>\n    <path d=\"M13 23H23\" fill=\"none\"/>\n  </g>\n</svg>\n";
     var ROCKET_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent(ROCKET_SVG) + '") 6 6, auto';
+    var BOOST_CURSORS = ["<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 36 36\">\n<defs>\n      <linearGradient id=\"orbit-plume\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n        <stop stop-color=\"#b6edff\"/><stop offset=\".28\" stop-color=\"#65cfff\"/>\n        <stop offset=\".65\" stop-color=\"#ffc36e\"/><stop offset=\"1\" stop-color=\"#ff9638\" stop-opacity=\".1\"/>\n      </linearGradient></defs>\n      <g data-orbit-nozzle=\"12\" transform=\"translate(23.65 23.65) rotate(-45)\">\n        <path d=\"M-3.8 -1H3.8L4.5 3L0 12L-4.5 3Z\" fill=\"url(#orbit-plume)\"/>\n        <path d=\"M-1.6 -1H1.6L2 2L0 8L-2 2Z\" fill=\"#e3faff\"/>\n      </g>\n  <g transform=\"rotate(-45 18 18)\" stroke=\"#18243c\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n    <path d=\"M12 17L7.5 23V28L14 25M24 17L28.5 23V28L22 25\" fill=\"#7498cf\"/>\n    <path d=\"M18 2Q10.5 8 11.5 19L13.5 26H22.5L24.5 19Q25.5 8 18 2Z\" fill=\"#edf4ff\"/>\n    <path d=\"M18 2Q14.8 4.5 13 8H23Q21.2 4.5 18 2Z\" fill=\"#8fb3eb\"/>\n    <path d=\"M21.5 9Q24 17 21 25H22.5L24.5 19Q25 13 23 9Z\" fill=\"#a4b8d6\" stroke=\"none\"/>\n    <circle cx=\"18\" cy=\"14.5\" r=\"3.5\" fill=\"#6cbde9\"/>\n    <path d=\"M16.4 13.5Q17 12.3 18.5 12.4\" fill=\"none\" stroke=\"#e7faff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>\n    <path d=\"M13 23H23\" fill=\"none\"/>\n  </g>\n</svg>\n", "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 36 36\">\n<defs>\n      <linearGradient id=\"orbit-plume\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n        <stop stop-color=\"#b6edff\"/><stop offset=\".28\" stop-color=\"#65cfff\"/>\n        <stop offset=\".65\" stop-color=\"#ffc36e\"/><stop offset=\"1\" stop-color=\"#ff9638\" stop-opacity=\".1\"/>\n      </linearGradient></defs>\n      <g data-orbit-nozzle=\"16\" transform=\"translate(23.65 23.65) rotate(-45)\">\n        <path d=\"M-3.8 -1H3.8L4.5 3L0 16L-4.5 3Z\" fill=\"url(#orbit-plume)\"/>\n        <path d=\"M-1.6 -1H1.6L2 2L0 11L-2 2Z\" fill=\"#e3faff\"/>\n      </g>\n  <g transform=\"rotate(-45 18 18)\" stroke=\"#18243c\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n    <path d=\"M12 17L7.5 23V28L14 25M24 17L28.5 23V28L22 25\" fill=\"#7498cf\"/>\n    <path d=\"M18 2Q10.5 8 11.5 19L13.5 26H22.5L24.5 19Q25.5 8 18 2Z\" fill=\"#edf4ff\"/>\n    <path d=\"M18 2Q14.8 4.5 13 8H23Q21.2 4.5 18 2Z\" fill=\"#8fb3eb\"/>\n    <path d=\"M21.5 9Q24 17 21 25H22.5L24.5 19Q25 13 23 9Z\" fill=\"#a4b8d6\" stroke=\"none\"/>\n    <circle cx=\"18\" cy=\"14.5\" r=\"3.5\" fill=\"#6cbde9\"/>\n    <path d=\"M16.4 13.5Q17 12.3 18.5 12.4\" fill=\"none\" stroke=\"#e7faff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>\n    <path d=\"M13 23H23\" fill=\"none\"/>\n  </g>\n</svg>\n", "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 36 36\">\n<defs>\n      <linearGradient id=\"orbit-plume\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n        <stop stop-color=\"#b6edff\"/><stop offset=\".28\" stop-color=\"#65cfff\"/>\n        <stop offset=\".65\" stop-color=\"#ffc36e\"/><stop offset=\"1\" stop-color=\"#ff9638\" stop-opacity=\".1\"/>\n      </linearGradient></defs>\n      <g data-orbit-nozzle=\"14\" transform=\"translate(23.65 23.65) rotate(-45)\">\n        <path d=\"M-3.8 -1H3.8L4.5 3L0 14L-4.5 3Z\" fill=\"url(#orbit-plume)\"/>\n        <path d=\"M-1.6 -1H1.6L2 2L0 9L-2 2Z\" fill=\"#e3faff\"/>\n      </g>\n  <g transform=\"rotate(-45 18 18)\" stroke=\"#18243c\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n    <path d=\"M12 17L7.5 23V28L14 25M24 17L28.5 23V28L22 25\" fill=\"#7498cf\"/>\n    <path d=\"M18 2Q10.5 8 11.5 19L13.5 26H22.5L24.5 19Q25.5 8 18 2Z\" fill=\"#edf4ff\"/>\n    <path d=\"M18 2Q14.8 4.5 13 8H23Q21.2 4.5 18 2Z\" fill=\"#8fb3eb\"/>\n    <path d=\"M21.5 9Q24 17 21 25H22.5L24.5 19Q25 13 23 9Z\" fill=\"#a4b8d6\" stroke=\"none\"/>\n    <circle cx=\"18\" cy=\"14.5\" r=\"3.5\" fill=\"#6cbde9\"/>\n    <path d=\"M16.4 13.5Q17 12.3 18.5 12.4\" fill=\"none\" stroke=\"#e7faff\" stroke-width=\"1.3\" stroke-linecap=\"round\"/>\n    <path d=\"M13 23H23\" fill=\"none\"/>\n  </g>\n</svg>\n"].map(function (svg) {
+      return 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") 6 6, auto';
+    });
     var TEXT_CURSOR = 'url("data:image/svg+xml,' + encodeURIComponent("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n  <path d=\"M10 5H22M16 5V27M10 27H22\" stroke=\"#77caff\" stroke-width=\"6\" opacity=\".18\"/>\n  <path d=\"M10 5H22M16 5V27M10 27H22\" stroke=\"#12223d\" stroke-width=\"3.8\"/>\n  <path d=\"M10 5H22M16 5V27M10 27H22\" stroke=\"#72c8ff\" stroke-width=\"2.2\"/>\n  <path d=\"M11 5H21M16 6V26M11 27H21\" stroke=\"#e1f5ff\" stroke-width=\".9\"/>\n</svg>\n") + '") 16 16, text';
     var RESIZE_SVGS = {"ew": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">\n  <g id=\"resize-axis\" transform=\"rotate(0 16 16)\">\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#17263f\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#9edfff\" stroke-width=\"1.5\"/>\n    <g stroke=\"#17263f\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n      <path d=\"M2 16L8 11L12 12.5V19.5L8 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M2 16L8 11V21Z\" fill=\"#8fb3eb\"/>\n      <path d=\"M30 16L24 11L20 12.5V19.5L24 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M30 16L24 11V21Z\" fill=\"#8fb3eb\"/>\n    </g>\n    <circle cx=\"16\" cy=\"16\" r=\"4\" fill=\"#17263f\" stroke=\"#b8d9ff\" stroke-width=\"1.1\"/>\n    <ellipse cx=\"16\" cy=\"16\" rx=\"6\" ry=\"2.2\" transform=\"rotate(-35 16 16)\" fill=\"none\" stroke=\"#8dd8f7\" stroke-width=\"1\"/>\n    <circle cx=\"16\" cy=\"16\" r=\"1.4\" fill=\"#e8faff\"/>\n  </g>\n</svg>\n", "ns": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">\n  <g id=\"resize-axis\" transform=\"rotate(90 16 16)\">\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#17263f\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#9edfff\" stroke-width=\"1.5\"/>\n    <g stroke=\"#17263f\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n      <path d=\"M2 16L8 11L12 12.5V19.5L8 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M2 16L8 11V21Z\" fill=\"#8fb3eb\"/>\n      <path d=\"M30 16L24 11L20 12.5V19.5L24 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M30 16L24 11V21Z\" fill=\"#8fb3eb\"/>\n    </g>\n    <circle cx=\"16\" cy=\"16\" r=\"4\" fill=\"#17263f\" stroke=\"#b8d9ff\" stroke-width=\"1.1\"/>\n    <ellipse cx=\"16\" cy=\"16\" rx=\"6\" ry=\"2.2\" transform=\"rotate(-35 16 16)\" fill=\"none\" stroke=\"#8dd8f7\" stroke-width=\"1\"/>\n    <circle cx=\"16\" cy=\"16\" r=\"1.4\" fill=\"#e8faff\"/>\n  </g>\n</svg>\n", "nwse": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">\n  <g id=\"resize-axis\" transform=\"rotate(45 16 16)\">\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#17263f\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#9edfff\" stroke-width=\"1.5\"/>\n    <g stroke=\"#17263f\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n      <path d=\"M2 16L8 11L12 12.5V19.5L8 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M2 16L8 11V21Z\" fill=\"#8fb3eb\"/>\n      <path d=\"M30 16L24 11L20 12.5V19.5L24 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M30 16L24 11V21Z\" fill=\"#8fb3eb\"/>\n    </g>\n    <circle cx=\"16\" cy=\"16\" r=\"4\" fill=\"#17263f\" stroke=\"#b8d9ff\" stroke-width=\"1.1\"/>\n    <ellipse cx=\"16\" cy=\"16\" rx=\"6\" ry=\"2.2\" transform=\"rotate(-35 16 16)\" fill=\"none\" stroke=\"#8dd8f7\" stroke-width=\"1\"/>\n    <circle cx=\"16\" cy=\"16\" r=\"1.4\" fill=\"#e8faff\"/>\n  </g>\n</svg>\n", "nesw": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"32\" height=\"32\" viewBox=\"0 0 32 32\">\n  <g id=\"resize-axis\" transform=\"rotate(-45 16 16)\">\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#17263f\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n    <path d=\"M8 16H24\" fill=\"none\" stroke=\"#9edfff\" stroke-width=\"1.5\"/>\n    <g stroke=\"#17263f\" stroke-width=\"1.2\" stroke-linejoin=\"round\">\n      <path d=\"M2 16L8 11L12 12.5V19.5L8 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M2 16L8 11V21Z\" fill=\"#8fb3eb\"/>\n      <path d=\"M30 16L24 11L20 12.5V19.5L24 21Z\" fill=\"#eaf4ff\"/>\n      <path d=\"M30 16L24 11V21Z\" fill=\"#8fb3eb\"/>\n    </g>\n    <circle cx=\"16\" cy=\"16\" r=\"4\" fill=\"#17263f\" stroke=\"#b8d9ff\" stroke-width=\"1.1\"/>\n    <ellipse cx=\"16\" cy=\"16\" rx=\"6\" ry=\"2.2\" transform=\"rotate(-35 16 16)\" fill=\"none\" stroke=\"#8dd8f7\" stroke-width=\"1\"/>\n    <circle cx=\"16\" cy=\"16\" r=\"1.4\" fill=\"#e8faff\"/>\n  </g>\n</svg>\n"};
     var RESIZE_AXES = {
@@ -149,7 +150,6 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
     var CSS = [
       "body[" + CURSOR_ATTRIBUTE + "=rocket], body[" + CURSOR_ATTRIBUTE + "=rocket] * { cursor:" + ROCKET_CURSOR + " !important; }",
       "body[" + CURSOR_ATTRIBUTE + "=text], body[" + CURSOR_ATTRIBUTE + "=text] * { cursor:" + TEXT_CURSOR + " !important; }",
-      "body[data-orbit-boosting][" + CURSOR_ATTRIBUTE + "=rocket], body[data-orbit-boosting][" + CURSOR_ATTRIBUTE + "=rocket] * { cursor:none !important; }",
       "body { isolation:isolate; background-color: #04060d !important;",
       " background-image: radial-gradient(ellipse at 78% 10%, rgba(56,69,100,.12), transparent 56%) !important;",
       " background-repeat: no-repeat !important; background-attachment: fixed !important; }",
@@ -206,20 +206,9 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
       "#" + GLOW_ID + " { background-position:center; background-repeat:no-repeat; }",
       "#" + GLOW_ID + "[data-context=reading] { background-size:65% 65%; }",
       "#" + GLOW_ID + "[data-context=input] { background-size:45% 45%; }",
-      "#" + FLIGHT_ID + " { position:fixed; left:0; top:0; width:32px; height:32px; z-index:2147483647; pointer-events:none !important; visibility:hidden; will-change:transform; }",
-      "#" + FLIGHT_ID + "[data-active=true] { visibility:visible; }",
-      "#" + FLIGHT_ID + " > svg { position:absolute; inset:0; width:32px; height:32px; overflow:visible; pointer-events:none !important; }",
-      "#" + EXHAUST_ID + " { position:absolute; left:21px; top:21px; width:0; height:0; pointer-events:none; opacity:0; transform:rotate(-45deg); }",
-      "#" + EXHAUST_ID + "[data-active=true] { opacity:1; }",
-      "#" + EXHAUST_ID + " > span { position:absolute; top:-1px; transform-origin:50% 0; clip-path:polygon(16% 0,84% 0,100% 25%,65% 76%,50% 100%,35% 76%,0 25%); }",
-      "#" + EXHAUST_ID + " > span:first-child { left:-7px; width:14px; height:34px; background:linear-gradient(#c5edff,#6dcfff 22%,#ffc36e 55%,rgba(255,123,48,0)); filter:drop-shadow(0 0 3px rgba(112,204,255,.6)); }",
-      "#" + EXHAUST_ID + " > span:last-child { left:-3px; width:6px; height:23px; background:linear-gradient(#fff,#c2f4ff 35%,rgba(255,239,173,.7) 65%,transparent); }",
-      "#" + EXHAUST_ID + "[data-active=true] > span:first-child { animation:orbit-thrust 110ms ease-in-out infinite alternate; }",
-      "#" + EXHAUST_ID + "[data-active=true] > span:last-child { animation:orbit-thrust 75ms ease-in-out infinite alternate-reverse; }",
-      "@keyframes orbit-thrust { from { transform:scale(.85,.7); } to { transform:scale(1.06,1.12); } }",
       "#" + SPARKS_ID + " { position:fixed; inset:0; z-index:2147483647; overflow:hidden; pointer-events:none; }",
       "#" + SPARKS_ID + " > span { position:absolute; width:3px; height:3px; border-radius:50%; corner-shape:round; background:#fbd59c; box-shadow:0 0 4px rgba(146,217,255,.6); }",
-      "@media(prefers-reduced-motion:reduce) { #" + EXHAUST_ID + " > span { animation:none !important; } #" + SPARKS_ID + " { display:none; } body [data-composer-card] { transition:none; } }",
+      "@media(prefers-reduced-motion:reduce) { #" + SPARKS_ID + " { display:none; } body [data-composer-card] { transition:none; } }",
       "@media(prefers-reduced-motion:reduce) { #" + GLOW_ID + " { transition:none; } }",
       "@media(max-width:700px) { #" + MOON_ID + " { width:112px; right:24px; top:72px; opacity:.9; } }",
       "body[data-ds-dark-theme] ::selection { background:rgba(122,162,255,.30); }"
@@ -255,20 +244,6 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
       var glow = document.createElement("div");
       glow.id = GLOW_ID;
       glow.setAttribute("aria-hidden", "true");
-      var exhaust = document.createElement("div");
-      exhaust.id = EXHAUST_ID;
-      exhaust.setAttribute("aria-hidden", "true");
-      exhaust.setAttribute("data-active", "false");
-      exhaust.appendChild(document.createElement("span"));
-      exhaust.appendChild(document.createElement("span"));
-      var flight = document.createElement("div");
-      flight.id = FLIGHT_ID;
-      flight.setAttribute("aria-hidden", "true");
-      flight.setAttribute("data-active", "false");
-      // Trusted, bundled SVG, shared with the native idle cursor. Inline SVG
-      // also works when the host CSP disallows data: image elements.
-      flight.innerHTML = ROCKET_SVG;
-      flight.appendChild(exhaust);
       var sparks = document.createElement("div");
       sparks.id = SPARKS_ID;
       sparks.setAttribute("aria-hidden", "true");
@@ -288,6 +263,11 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
       var motionQuery = null;
       var boosting = false;
       var boostTimer = null;
+      var boostFrame = 0;
+      var boostTarget = null;
+      var boostOriginal = "";
+      var boostPriority = "";
+      var boostApplied = "";
       var sparkNodes = new Set();
       var uiObserver = null;
       var layoutFrame = 0;
@@ -300,10 +280,35 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         var root = target && typeof target.getRootNode === "function" ? target.getRootNode() : null;
         return !!(root && root.host && root.host.hasAttribute("data-windows-menu"));
       }
-      function positionFlight() {
-        // One composited parent moves the rocket AND nozzle together; an OS
-        // cursor plus a separately rendered flame can never stay frame-locked.
-        flight.style.transform = "translate3d(" + (pointerX - 6) + "px," + (pointerY - 6) + "px,0)";
+      function releaseBoostTarget() {
+        if (!boostTarget) return;
+        // Restore only our own override; never overwrite a host's newer style.
+        if (boostTarget.style.getPropertyValue("cursor") === boostApplied) {
+          if (boostOriginal) boostTarget.style.setProperty("cursor", boostOriginal, boostPriority);
+          else boostTarget.style.removeProperty("cursor");
+        }
+        boostTarget = null;
+      }
+      function applyBoostCursor(target) {
+        if (!target || target.nodeType !== 1 || !target.style) target = document.body;
+        if (boostTarget !== target) {
+          releaseBoostTarget();
+          boostTarget = target;
+          boostOriginal = target.style.getPropertyValue("cursor");
+          boostPriority = target.style.getPropertyPriority("cursor");
+        }
+        // Only the hovered element changes once per flame frame. No global
+        // cursor rule invalidation, layout, or DOM cursor movement is needed.
+        target.style.setProperty("cursor", BOOST_CURSORS[boostFrame], "important");
+        boostApplied = target.style.getPropertyValue("cursor");
+      }
+      function tickBoost() {
+        boostTimer = null;
+        if (!boosting || disposed || (motionQuery && motionQuery.matches)) return;
+        boostFrame = (boostFrame + 1) % BOOST_CURSORS.length;
+        if (boostTarget) applyBoostCursor(boostTarget);
+        if (boostFrame === 0) emitSpark();
+        boostTimer = window.setTimeout(tickBoost, 90);
       }
       function emitSpark() {
         if (!boosting || disposed) return;
@@ -323,14 +328,12 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
             animation.finished.then(function () { sparkNodes.delete(node); node.remove(); }, function () { sparkNodes.delete(node); node.remove(); });
           } else node.remove();
         }
-        if (!(motionQuery && motionQuery.matches)) boostTimer = window.setTimeout(emitSpark, 65);
       }
       function stopBoost() {
         boosting = false;
         if (boostTimer !== null) window.clearTimeout(boostTimer);
         boostTimer = null;
-        exhaust.setAttribute("data-active", "false");
-        flight.setAttribute("data-active", "false");
+        releaseBoostTarget();
         if (document.body) document.body.removeAttribute("data-orbit-boosting");
       }
       function startBoost(event) {
@@ -339,13 +342,13 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         if (document.body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket" && !inMenu(realTarget(event))) return;
         pointerX = event.clientX;
         pointerY = event.clientY;
-        positionFlight();
         if (boosting) return;
         boosting = true;
-        flight.setAttribute("data-active", "true");
-        exhaust.setAttribute("data-active", "true");
+        boostFrame = 0;
+        applyBoostCursor(realTarget(event));
         document.body.setAttribute("data-orbit-boosting", "");
         emitSpark();
+        if (!(motionQuery && motionQuery.matches)) boostTimer = window.setTimeout(tickBoost, 90);
       }
       function endBoost(event) {
         if (!event || event.button === 0 || event.type === "pointercancel") stopBoost();
@@ -397,7 +400,6 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
           var sheet = document.createElement("style");
           sheet.id = STYLE_ID + "-menubar";
           sheet.textContent = ":host, :host * { cursor:" + ROCKET_CURSOR + " !important; }";
-          sheet.textContent += ":host-context(body[data-orbit-boosting][data-orbit-rocket-cursor=rocket]), :host-context(body[data-orbit-boosting][data-orbit-rocket-cursor=rocket]) * { cursor:none !important; }";
           root.appendChild(sheet);
           menuSheets.push(sheet);
         });
@@ -532,6 +534,7 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         var target = realTarget(event);
         if (!target || target.nodeType !== 1) target = body;
         if (cursorTarget !== target) {
+          releaseBoostTarget();
           cursorTarget = target;
           body.removeAttribute(CURSOR_ATTRIBUTE);
           var original = window.getComputedStyle(target);
@@ -540,21 +543,28 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         }
         // Keep resize direction and native drag behavior, with an orbital skin.
         // Disabled, vertical text and other special drag cursors stay native.
+        var mode = null;
         if (inMenu(target)) {
-          body.setAttribute(CURSOR_ATTRIBUTE, "rocket");
+          mode = "rocket";
         } else if (RESIZE_AXES[cursorNative]) {
-          body.setAttribute(CURSOR_ATTRIBUTE, cursorNative);
+          mode = cursorNative;
         } else if (cursorNative === "text") {
-          body.setAttribute(CURSOR_ATTRIBUTE, "text");
+          mode = "text";
         } else if (cursorNative === "auto" || cursorNative === "default" || cursorNative === "pointer") {
           var text = isTextInput(target) || (cursorNative !== "pointer" && cursorSelectable && hitsText(event.clientX, event.clientY));
-          body.setAttribute(CURSOR_ATTRIBUTE, text ? "text" : "rocket");
-        } else {
-          body.removeAttribute(CURSOR_ATTRIBUTE);
+          mode = text ? "text" : "rocket";
         }
-        if (boosting && body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket") stopBoost();
+        // Avoid invalidating body-wide cursor selectors on every display frame.
+        if (body.getAttribute(CURSOR_ATTRIBUTE) !== mode) {
+          if (mode) body.setAttribute(CURSOR_ATTRIBUTE, mode);
+          else body.removeAttribute(CURSOR_ATTRIBUTE);
+        }
+        if (boosting) {
+          if (body.getAttribute(CURSOR_ATTRIBUTE) !== "rocket") stopBoost();
+          else if (boostTarget !== target) applyBoostCursor(target);
+        }
         var context = isTextInput(target) || target.closest("[data-composer-card]") ? "input" : body.getAttribute(CURSOR_ATTRIBUTE) === "text" || target.closest("[data-chat-flow-key]") ? "reading" : "space";
-        glow.setAttribute("data-context", context);
+        if (glow.getAttribute("data-context") !== context) glow.setAttribute("data-context", context);
       }
 
       // Coalesce pointer events into one composited transform per display frame.
@@ -563,12 +573,11 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         if (disposed) return;
         if (event.pointerType === "touch") { hideGlow(); return; }
         if (boosting && !(event.buttons & 1)) stopBoost();
-        pointerEvent = event;
+        // composedPath() is cleared after dispatch; preserve shadow-menu hits
+        // before the coalesced update instead of retargeting to their host.
+        pointerEvent = { target:realTarget(event), clientX:event.clientX, clientY:event.clientY };
         pointerX = event.clientX;
         pointerY = event.clientY;
-        // No extra rAF wait for the active cursor. The soft ambient glow can
-        // remain coalesced; the visible rocket and flame share this transform.
-        if (boosting) positionFlight();
         if (glowFrame) return;
         glowFrame = window.requestAnimationFrame(function () {
           glowFrame = 0;
@@ -615,7 +624,6 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         if (body && !meteors.parentNode) body.appendChild(meteors);
         if (body && !glow.parentNode) body.appendChild(glow);
         if (body && !sparks.parentNode) body.appendChild(sparks);
-        if (body && !flight.parentNode) body.appendChild(flight);
         try { renderMoon(moon); } catch (_) {}
         renderAstronauts(astronauts).catch(function () { /* Decorative only. */ });
         paint();
@@ -682,8 +690,6 @@ textarea{display:block;width:100%;height:65px;border:0;resize:none;background:tr
         if (astronauts.parentNode) astronauts.parentNode.removeChild(astronauts);
         if (meteors.parentNode) meteors.parentNode.removeChild(meteors);
         if (glow.parentNode) glow.parentNode.removeChild(glow);
-        if (exhaust.parentNode) exhaust.parentNode.removeChild(exhaust);
-        if (flight.parentNode) flight.parentNode.removeChild(flight);
         if (sparks.parentNode) sparks.parentNode.removeChild(sparks);
       };
     }
